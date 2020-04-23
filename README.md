@@ -1,9 +1,17 @@
 Nautilus
 ========
-A command line CMS for management of simple blog like data stores.
+A simple command line CMS for management of simple blog like data stores.
 ------------------------------------------------------------------
 This has been a simple learning project for myself for both the Rust language
-and crates like Diesel ORM, Clap, Serde and such.
+and crates like Diesel ORM, Clap, Serde and such.  Much of it is based on the Diesel
+simple CLI tutorial not so much the advanced CLI example in Diesel.  
+
+Differences from the Diesel Simple CLI tutorial:
+* Argument parsing with Clap allows a more standard arrangement of parts between ``lib.rs`` and ``main.rs``
+* CRUD functions changed to a fuller workflow (for me at least, publish flagging dropped)
+* Use of VIM as a content editor
+* Import an existing post from JSON
+* Export a post to JSON
 
 Usage
 -----
@@ -48,5 +56,4 @@ with those sorts of things.
 
 Use at your own risk
 ====================
-I really haven't gotten around to writing tests or throwing this in a pipeline
-yet, but you know merge requests and Github issues are welcome.
+This is just barely working.  I really haven't gotten around to writing tests or throwing this in a pipeline yet, but you know merge requests and Github issues are welcome.
