@@ -13,7 +13,8 @@ use dotenv::dotenv;
 use std::env;
 use self::models::{Post, NewPost};
 
-
+// #[derive(Deserialize, Debug)]
+// pub struct PostList { vec!(Post); }
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
@@ -30,6 +31,7 @@ pub fn read_all_posts() -> Vec<Post>{
     let connection = establish_connection();
 
     let results = posts
+        .order(id.desc())
         .load::<Post>(&connection)
         .expect("Error loading posts");
 

@@ -4,9 +4,10 @@ use crate::serde_derive::{Serialize, Deserialize};
 #[derive(Queryable, Identifiable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]
 pub struct Post {
     pub id:i32,
+    pub published: bool,
     pub title: String,
     pub body: String,
-    pub published: bool,
+    pub time: chrono::NaiveDateTime,
 }
 
 #[derive(Insertable)]

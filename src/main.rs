@@ -22,6 +22,8 @@ use std::io::prelude::*;
 use self::models::{Post, NewPost};
 use prettytable::{Table};
 use serde_json::json;
+// use dotenv::dotenv;
+// use std::env;
 
 // @TODO Separate the interactive mode from the non-interactive mode
 // @TODO Add the verbose mode handlers
@@ -45,19 +47,19 @@ fn main() {
         ("edit", Some(_clone_matches)) => {
             // UGLY get's the subcommand arg, unwraps it, parses it as i32, unwraps that or on fail gives it a value of 1
             // Rinse, repeat, soak eyes in bleach
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(1);
+            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
             edit_post(this_post)
         }
         ("show", Some(_clone_matches)) => {
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(1);
+            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
             show_post(this_post)
         }
         ("delete", Some(_clone_matches)) => {
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(1);
+            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
             delete_a_post(this_post)
         }
         ("export", Some(_clone_matches)) => {
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(1);
+            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
             let export_filename = _clone_matches.value_of("export_filename").unwrap();
             export_post(this_post, export_filename)
         }
