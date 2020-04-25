@@ -8,6 +8,7 @@ pub struct Post {
     pub title: String,
     pub body: String,
     pub time: chrono::NaiveDateTime,
+    pub tags: String,
 }
 
 #[derive(Insertable)]
