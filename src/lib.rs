@@ -11,7 +11,7 @@ use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
 use std::env;
-use self::models::{Post, NewPost};
+use self::models::{Post, Link, NewPost, NewLink};
 
 // #[derive(Deserialize, Debug)]
 // pub struct PostList { vec!(Post); }
@@ -25,18 +25,6 @@ pub fn establish_connection() -> PgConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn read_all_posts() -> Vec<Post>{
-    use schema::posts::dsl::*;
-
-    let connection = establish_connection();
-
-    let results = posts
-        .order(id.desc())
-        .load::<Post>(&connection)
-        .expect("Error loading posts");
-
-    return results
-}
 
 pub fn create_post<'a>(content: &NewPost) -> Post {
     use schema::posts;
@@ -75,7 +63,33 @@ pub fn read_post(post_id: i32) -> Post{
     return result
 }
 
+pub fn read_all_posts() -> Vec<Post> {
+    use schema::posts::dsl::*;
 
+    let connection = establish_connection();
+
+    let results = posts
+        .order(id.desc())
+        .load::<Post>(&connection)
+        .expect("Error loading posts");
+
+    return results
+}
+
+pub fn read_posts_by_filter_limit(filter_value: String, limit_value: i64) -> Vec<Post> {
+    use schema::posts::dsl::*;
+
+    let connection = establish_connection();
+
+    let results = posts
+        .filter(tags.like(&filter_value))
+        .limit(limit_value)
+        .order(id.desc())
+        .load::<Post>(&connection)
+        .expect("Error loading posts");
+
+    return results
+}
 
 pub fn publish_post(post_id: i32) {
     use schema::posts::dsl::{posts, published};
@@ -98,6 +112,45 @@ pub fn delete_post(post_id: i32) {
         .execute(&connection)
         .expect("Error deleting post");
     println!("Deleted post number {}", post_id)
+}
+
+pub fn read_all_links() -> Vec<Link> {
+    use schema::links::dsl::*;
+
+    let connection = establish_connection();
+
+    let results = links
+        .order(id.desc())
+        .load::<Link>(&connection)
+        .expect("Error loading links");
+
+    return results
+}
+
+pub fn read_links_by_filter_limit(filter_value: String, limit_value: i64) -> Vec<Link> {
+    use schema::links::dsl::*;
+
+    let connection = establish_connection();
+
+    let results = links
+        .filter(tags.like(&filter_value))
+        .limit(limit_value)
+        .order(id.asc())
+        .load::<Link>(&connection)
+        .expect("Error loading links");
+
+    return results
+}
+
+pub fn create_link<'a>(content: &NewLink) -> Link {
+    use schema::links;
+
+    let connection = establish_connection();
+
+    diesel::insert_into(links::table)
+        .values(content)
+        .get_result(&connection)
+        .expect("Error saving new link")
 }
 
 // @TODO Not immediately necessary, but needs to be done
