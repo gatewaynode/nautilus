@@ -22,23 +22,6 @@ subcommands:
         about: list post contents
         version: "1.0"
         author: anon
-    - write:
-        about: create a piece of post content
-        version: "1.0"
-        author: anon
-    - link:
-        about: create a piece of link content
-        version: "1.0"
-        author: anon
-    - edit:
-        about: edit a post by post_id (sub args)
-        version: "1.0"
-        author: anon
-        args:
-            - post_id:
-                help: The post id number (position 1)
-                index: 1
-                required: true
     - show:
         about: show a blog post by id (sub args)
         version: "1.0"
@@ -47,13 +30,38 @@ subcommands:
             - post_id:
                 help: The post id number (position 1)
                 required: true
-    - delete:
+    - post:
+        about: create a piece of post content
+        version: "1.0"
+        author: anon
+    - epost:
+        about: edit a post by post_id (sub args)
+        version: "1.0"
+        author: anon
+        args:
+            - post_id:
+                help: The post id number (position 1)
+                index: 1
+                required: true
+    - depost:
         about: delete a post by post_id number (sub args)
         version: "1.0"
         author: anon
         args:
             - post_id:
                 help: The post id number (position 1)
+                required: true
+    - link:
+        about: create a piece of link content
+        version: "1.0"
+        author: anon
+    - delink:
+        about: delete a link by id (sub args)
+        version: "1.0"
+        author: anon
+        args:
+            - link_id:
+                help: The link id number (position 1)
                 required: true
     - export:
         about: export a post by post_id to a file (sub args)
@@ -76,3 +84,7 @@ subcommands:
             - import_filename:
                 help: The filename to open and import (position 1)
                 required: true
+    - testing:
+        about: Don't use this, it's for prototyping new functions
+        version: "1.0"
+        author: anon
