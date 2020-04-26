@@ -13,8 +13,6 @@ use dotenv::dotenv;
 use std::env;
 use self::models::{Post, Link, NewPost, NewLink};
 
-// #[derive(Deserialize, Debug)]
-// pub struct PostList { vec!(Post); }
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
@@ -22,11 +20,11 @@ pub fn establish_connection() -> PgConnection {
     let database_url = env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set");
     PgConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
+        .expect("Error connecting to database.")
 }
 
 
-pub fn create_post<'a>(content: &NewPost) -> Post {
+pub fn create_post(content: &NewPost) -> Post {
     use schema::posts;
 
     let connection = establish_connection();
@@ -55,12 +53,10 @@ pub fn read_post(post_id: i32) -> Post{
 
     let connection = establish_connection();
 
-    let result = posts.filter(id.eq(post_id))
+    posts.filter(id.eq(post_id))
         .limit(1)
         .get_result::<Post>(&connection)
-        .expect("Error loading post by that ID");
-
-    return result
+        .expect("Error loading post by that ID")
 }
 
 pub fn read_all_posts() -> Vec<Post> {
@@ -68,12 +64,10 @@ pub fn read_all_posts() -> Vec<Post> {
 
     let connection = establish_connection();
 
-    let results = posts
+    posts
         .order(id.desc())
         .load::<Post>(&connection)
-        .expect("Error loading posts");
-
-    return results
+        .expect("Error loading posts")
 }
 
 pub fn read_posts_by_filter_limit(filter_value: String, limit_value: i64) -> Vec<Post> {
@@ -81,26 +75,23 @@ pub fn read_posts_by_filter_limit(filter_value: String, limit_value: i64) -> Vec
 
     let connection = establish_connection();
 
-    let results = posts
+    posts
         .filter(tags.like(&filter_value))
         .limit(limit_value)
         .order(id.desc())
         .load::<Post>(&connection)
-        .expect("Error loading posts");
-
-    return results
+        .expect("Error loading posts")
 }
 
-pub fn publish_post(post_id: i32) {
+pub fn publish_post(post_id: i32) -> Post {
     use schema::posts::dsl::{posts, published};
 
     let connection = establish_connection();
 
-    let post = diesel::update(posts.find(post_id))
+    diesel::update(posts.find(post_id))
         .set(published.eq(true))
         .get_result::<Post>(&connection)
-        .expect(&format!("Unable to find post number {}", post_id));
-    println!("Published post {}", post.title)
+        .expect("Unable to find post number")
 }
 
 pub fn delete_post(post_id: i32) {
@@ -108,10 +99,9 @@ pub fn delete_post(post_id: i32) {
 
     let connection = establish_connection();
 
-    let _deleted = diesel::delete(posts.filter(id.eq(post_id)))
+    diesel::delete(posts.filter(id.eq(post_id)))
         .execute(&connection)
         .expect("Error deleting post");
-    println!("Deleted post number {}", post_id)
 }
 
 pub fn read_all_links() -> Vec<Link> {
@@ -119,12 +109,10 @@ pub fn read_all_links() -> Vec<Link> {
 
     let connection = establish_connection();
 
-    let results = links
+    links
         .order(id.desc())
         .load::<Link>(&connection)
-        .expect("Error loading links");
-
-    return results
+        .expect("Error loading links")
 }
 
 pub fn read_links_by_filter_limit(filter_value: String, limit_value: i64) -> Vec<Link> {
@@ -132,17 +120,15 @@ pub fn read_links_by_filter_limit(filter_value: String, limit_value: i64) -> Vec
 
     let connection = establish_connection();
 
-    let results = links
+    links
         .filter(tags.like(&filter_value))
         .limit(limit_value)
         .order(id.asc())
         .load::<Link>(&connection)
-        .expect("Error loading links");
-
-    return results
+        .expect("Error loading links")
 }
 
-pub fn create_link<'a>(content: &NewLink) -> Link {
+pub fn create_link(content: &NewLink) -> Link {
     use schema::links;
 
     let connection = establish_connection();
@@ -153,17 +139,35 @@ pub fn create_link<'a>(content: &NewLink) -> Link {
         .expect("Error saving new link")
 }
 
-// @TODO Not immediately necessary, but needs to be done
-pub fn does_id_exist(post_id: i32) -> bool {
-    use schema::posts::dsl::*;
+pub fn delete_link(link_id: i32) {
+    use schema::links::dsl::*;
+
     let connection = establish_connection();
 
-    let result = posts.filter(id.eq(&post_id))
-        .first::<Post>(&connection);
-
-    println!("{:#?}", result);
-    return false
+    diesel::delete(links.filter(id.eq(link_id)))
+        .execute(&connection)
+        .expect("Error deleting link");
 }
+
+pub fn publish_link(link_id: i32) -> Link {
+    use schema::links::dsl::{links, published};
+
+    let connection = establish_connection();
+
+    diesel::update(links.find(link_id))
+        .set(published.eq(true))
+        .get_result::<Link>(&connection)
+        .expect("Unable to find post number")
+}
+
+// @TODO Not immediately necessary, but needs to be done
+// pub fn does_id_exist(post_id: i32) -> bool {
+//     use schema::posts::dsl::*;
+//     let connection = establish_connection();
+//
+//     posts.filter(id.eq(&post_id))
+//         .first::<Post>(&connection)
+// }
 
 #[cfg(test)]
 mod tests {

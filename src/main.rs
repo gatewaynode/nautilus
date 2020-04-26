@@ -17,19 +17,19 @@ use tempfile::NamedTempFile;
 use std::fs;
 use nautilus::*;
 use std::{thread, time};
-use std::io::{stdin};
 use std::io::prelude::*;
-use self::models::{Post, NewPost, Link, NewLink};
+use std::process::exit;
+use self::models::{Post, NewPost, NewLink};
 use prettytable::{Table};
 use serde_json::json;
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 
 
-// @TODO change CLI input handling to RustyLine??? https://crates.io/crates/rustyline
-// @TODO Navigation Handler (maybe just use links tagged nav????)
-// @TODO Separate the interactive mode from the non-interactive mode
 // @TODO Add the verbose mode handlers
 // @TODO Add post_id checking standard handler (currently just fails if the post_id doesn't exist)
 // @TODO Need the import function to handle insert new as well as update existing
+// @TODO Navigation Handler (maybe just use links tagged nav????)
 
 fn main() {
     use clap::{load_yaml, App};
@@ -42,25 +42,29 @@ fn main() {
         ("list", Some(_clone_matches)) => {
             list_posts()
         }
-        ("write", Some(_clone_matches)) => {
+        ("show", Some(_clone_matches)) => {
+            // UGLY get's the subcommand arg, unwraps it, parses it as i32, unwraps that or on fail gives it a value of 1
+            // Rinse, repeat, soak eyes in bleach
+            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
+            show_post(this_post)
+        }
+        ("post", Some(_clone_matches)) => {
             write_post()
+        }
+        ("epost", Some(_clone_matches)) => {
+            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
+            edit_post(this_post)
+        }
+        ("depost", Some(_clone_matches)) => {
+            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
+            delete_a_post(this_post)
         }
         ("link", Some(_clone_matches)) => {
             write_link()
         }
-        ("edit", Some(_clone_matches)) => {
-            // UGLY get's the subcommand arg, unwraps it, parses it as i32, unwraps that or on fail gives it a value of 1
-            // Rinse, repeat, soak eyes in bleach
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            edit_post(this_post)
-        }
-        ("show", Some(_clone_matches)) => {
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            show_post(this_post)
-        }
-        ("delete", Some(_clone_matches)) => {
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            delete_a_post(this_post)
+        ("delink", Some(_clone_matches)) => {
+            let link_id = _clone_matches.value_of("link_id").unwrap().parse::<i32>().unwrap_or(0);
+            delete_a_link(link_id)
         }
         ("export", Some(_clone_matches)) => {
             let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
@@ -72,10 +76,39 @@ fn main() {
             let import_filename = _clone_matches.value_of("import_filename").unwrap();
             import_post(import_filename)
         }
+        ("testing", Some(_clone_matches)) => {
+            let output = input("promted$: ");
+            println!("output = {:?}", output)
+        }
         ("", None) => println!("No subcommand used"), // @TODO add a default action here
         _ => unreachable!(),
     }
 
+}
+
+fn input(prompt: &str) -> String {
+    let mut editor = Editor::<()>::new();
+    // @TODO get history working
+    // if editor.load_history("~/.n4_history.txt").is_err() {
+    //     println!("No previous history found.")
+    // }
+    let readline = editor.readline(&prompt);
+    match readline {
+        Ok(line) => {
+            editor.add_history_entry(line.as_str());
+            line
+        },
+        Err(ReadlineError::Interrupted) => {
+            exit(0)
+        },
+        Err(ReadlineError::Eof) => {
+            exit(1)
+        }
+        Err(err) => {
+            println!("Error: {:?}", err);
+            exit(1)
+        }
+    }
 }
 
 fn list_posts() {
@@ -92,10 +125,8 @@ fn list_posts() {
 
 fn write_post() {
 
-    println!("Writing Post...\nTitle: ");
-    let mut raw_title = String::new();
-    stdin().read_line(&mut raw_title).unwrap();
-    let raw_title = &raw_title[..(raw_title.len() -1 )]; // Drops the newline, there has to be a cleaner way to do this
+    println!("Writing Post.");
+    let raw_title = input("Title: ");
 
     let some_file = NamedTempFile::new();
     let file_path = String::from(some_file.unwrap().path().to_string_lossy());
@@ -124,35 +155,7 @@ fn write_post() {
 
 }
 
-fn write_link() {
-    println!("Writing Link...\nDisplay text: ");
-    let mut raw_text = String::new();
-    stdin().read_line(&mut raw_text).unwrap();
-    let raw_text = &raw_text[..(raw_text.len() - 1)];
-    println!("Hover title: ");
-    let mut raw_title = String::new();
-    stdin().read_line(&mut raw_title).unwrap();
-    let raw_title = &raw_title[..(raw_title.len() - 1)];
-    println!("Link URL: ");
-    let mut raw_url = String::new();
-    stdin().read_line(&mut raw_url).unwrap();
-    let raw_url = &raw_url[..(raw_url.len() - 1)];
-    println!("Tags: ");
-    let mut raw_tags = String::new();
-    stdin().read_line(&mut raw_tags).unwrap();
-    let raw_tags = &raw_tags[..(raw_tags.len() -1 )];
 
-    let rawlink = NewLink {
-        text: &raw_text,
-        title: &raw_title,
-        url: &raw_url,
-        tags: &raw_tags,
-    };
-
-    let link = create_link(&rawlink);
-    println!("\nSaved {} with id {}", &link.text, &link.id)
-
-}
 
 fn edit_post(post_id: i32) {
     println!("Editing post {}", post_id);
@@ -193,6 +196,30 @@ fn show_post(post_id: i32) {
 fn delete_a_post(post_id: i32) {
     println!("Deleting post {}", post_id);
     delete_post(post_id)
+}
+
+fn write_link() {
+    println!("Writing Link");
+    let raw_text = input("Display text: ");
+    let raw_title = input("Hover title: ");
+    let raw_url = input("Link URL: ");
+    let raw_tags = input("Tags: ");
+
+    let rawlink = NewLink {
+        text: &raw_text,
+        title: &raw_title,
+        url: &raw_url,
+        tags: &raw_tags,
+    };
+
+    let link = create_link(&rawlink);
+    println!("\nSaved {} with id {}", &link.text, &link.id)
+
+}
+
+fn delete_a_link(link_id: i32) {
+    println!("Deleting link {}", link_id);
+    delete_link(link_id)
 }
 
 fn export_post(this_post: i32, export_filename: &str) {
