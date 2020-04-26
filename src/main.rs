@@ -19,12 +19,13 @@ use nautilus::*;
 use std::{thread, time};
 use std::io::{stdin};
 use std::io::prelude::*;
-use self::models::{Post, NewPost};
+use self::models::{Post, NewPost, Link, NewLink};
 use prettytable::{Table};
 use serde_json::json;
-// use dotenv::dotenv;
-// use std::env;
 
+
+// @TODO change CLI input handling to RustyLine??? https://crates.io/crates/rustyline
+// @TODO Navigation Handler (maybe just use links tagged nav????)
 // @TODO Separate the interactive mode from the non-interactive mode
 // @TODO Add the verbose mode handlers
 // @TODO Add post_id checking standard handler (currently just fails if the post_id doesn't exist)
@@ -43,6 +44,9 @@ fn main() {
         }
         ("write", Some(_clone_matches)) => {
             write_post()
+        }
+        ("link", Some(_clone_matches)) => {
+            write_link()
         }
         ("edit", Some(_clone_matches)) => {
             // UGLY get's the subcommand arg, unwraps it, parses it as i32, unwraps that or on fail gives it a value of 1
@@ -91,6 +95,7 @@ fn write_post() {
     println!("Writing Post...\nTitle: ");
     let mut raw_title = String::new();
     stdin().read_line(&mut raw_title).unwrap();
+    let raw_title = &raw_title[..(raw_title.len() -1 )]; // Drops the newline, there has to be a cleaner way to do this
 
     let some_file = NamedTempFile::new();
     let file_path = String::from(some_file.unwrap().path().to_string_lossy());
@@ -116,6 +121,36 @@ fn write_post() {
 
     let post = create_post(&rawpost);
     println!("\nSaved {} with id {}", &rawpost.title, post.id)
+
+}
+
+fn write_link() {
+    println!("Writing Link...\nDisplay text: ");
+    let mut raw_text = String::new();
+    stdin().read_line(&mut raw_text).unwrap();
+    let raw_text = &raw_text[..(raw_text.len() - 1)];
+    println!("Hover title: ");
+    let mut raw_title = String::new();
+    stdin().read_line(&mut raw_title).unwrap();
+    let raw_title = &raw_title[..(raw_title.len() - 1)];
+    println!("Link URL: ");
+    let mut raw_url = String::new();
+    stdin().read_line(&mut raw_url).unwrap();
+    let raw_url = &raw_url[..(raw_url.len() - 1)];
+    println!("Tags: ");
+    let mut raw_tags = String::new();
+    stdin().read_line(&mut raw_tags).unwrap();
+    let raw_tags = &raw_tags[..(raw_tags.len() -1 )];
+
+    let rawlink = NewLink {
+        text: &raw_text,
+        title: &raw_title,
+        url: &raw_url,
+        tags: &raw_tags,
+    };
+
+    let link = create_link(&rawlink);
+    println!("\nSaved {} with id {}", &link.text, &link.id)
 
 }
 

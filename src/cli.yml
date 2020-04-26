@@ -26,6 +26,10 @@ subcommands:
         about: create a piece of post content
         version: "1.0"
         author: anon
+    - link:
+        about: create a piece of link content
+        version: "1.0"
+        author: anon
     - edit:
         about: edit a post by post_id (sub args)
         version: "1.0"
