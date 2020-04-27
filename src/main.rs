@@ -95,7 +95,7 @@ fn input(prompt: &str) -> String {
     let readline = editor.readline(&prompt);
     match readline {
         Ok(line) => {
-            editor.add_history_entry(line.as_str());
+            // editor.add_history_entry(line.as_str());
             line
         },
         Err(ReadlineError::Interrupted) => {
@@ -145,17 +145,17 @@ fn write_post() {
     fs::remove_file(&file_path)
         .expect("Could not cleanup temp file");
 
+    let raw_tags = input("Tags: ");
+
     let rawpost = NewPost {
         title: &raw_title,
         body: &contents,
+        tags: &raw_tags,
     };
 
     let post = create_post(&rawpost);
     println!("\nSaved {} with id {}", &rawpost.title, post.id)
-
 }
-
-
 
 fn edit_post(post_id: i32) {
     println!("Editing post {}", post_id);

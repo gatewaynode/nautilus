@@ -30,13 +30,13 @@ pub fn create_post(content: &NewPost) -> Post {
     let connection = establish_connection();
 
     // Just used the passed struct???
-    let new_post = NewPost {
-        title: content.title,
-        body: content.body,
-    };
+    // let new_post = NewPost {
+    //     title: content.title,
+    //     body: content.body,
+    // };
 
     diesel::insert_into(posts::table)
-        .values(&new_post)
+        .values(content)
         .get_result(&connection)
         .expect("Error saving new post")
 }
@@ -75,8 +75,10 @@ pub fn read_posts_by_filter_limit(filter_value: String, limit_value: i64) -> Vec
 
     let connection = establish_connection();
 
+    let real_filter_value = format!("%%{}%%", filter_value);
+
     posts
-        .filter(tags.like(&filter_value))
+        .filter(tags.like(&real_filter_value))
         .limit(limit_value)
         .order(id.desc())
         .load::<Post>(&connection)
@@ -120,8 +122,10 @@ pub fn read_links_by_filter_limit(filter_value: String, limit_value: i64) -> Vec
 
     let connection = establish_connection();
 
+    let real_filter_value = format!("%%{}%%", filter_value);
+
     links
-        .filter(tags.like(&filter_value))
+        .filter(tags.like(&real_filter_value))
         .limit(limit_value)
         .order(id.asc())
         .load::<Link>(&connection)
