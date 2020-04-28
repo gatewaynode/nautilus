@@ -16,6 +16,7 @@ pub struct Post {
 pub struct NewPost<'a> {
     pub title: &'a str,
     pub body: &'a str,
+    pub tags: &'a str,
 }
 
 #[derive(Queryable, Identifiable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]

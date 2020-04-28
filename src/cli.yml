@@ -7,8 +7,8 @@ the database."
 args:
     - verbose:
         short: v
-        multiple: true
-        help: Set's the level of verbosity
+        help: Enable extra output
+        takes_value: false
 subcommands:
     # - test:
     #     about: controls testing features NOT IMPLEMENTED YET
