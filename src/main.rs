@@ -27,54 +27,97 @@ use rustyline::Editor;
 
 
 // @TODO Add the verbose mode handlers
+// @TODO Edit should take field types as arguments or open interactive choice of fields to edit
 // @TODO Add post_id checking standard handler (currently just fails if the post_id doesn't exist)
+// @TODO Default mode should be interactive if no args or subcommands are received
 // @TODO Need the import function to handle insert new as well as update existing
-// @TODO Navigation Handler (maybe just use links tagged nav????)
+// @TODO Navigation content type (maybe just use links tagged nav????)
+
+/// The command line CMS
+///
+/// Two basic content types supported in the library and app with the following fields
+/// available:
+/// * Post
+///   - ID: i32, auto
+///   - Publised: Bool, default "false"
+///   - Title: String
+///   - Body: String
+///   - Time: Datetime+TZ, Auto
+///   - Tags: String, default "front"
+/// * Link
+///   - ID: i32, auto
+///   - Publised: Bool, default "false"
+///   - Text: String
+///   - Title: String
+///   - URL: String
+///   - Tags: String
+///   - Time: Datetime+TZ, Auto
+///
+struct State {
+    verbose: bool,
+    // interactive: bool, // Just thinking out loud
+    // connection: SomeConnectionPool, // Just thinking out loud
+}
+
+impl State {
+    fn new() -> State {
+        State {
+            verbose: false,
+        }
+    }
+}
 
 fn main() {
+    // <-- Parse args and set initial app state -->
+    let mut state = State::new();
     use clap::{load_yaml, App};
 
     let yaml = load_yaml!("cli.yml");
 
     let matches = App::from(yaml).get_matches();
 
+    // This will work for arg flags
+    if matches.is_present("verbose") {
+        state.verbose = true;
+    }
+
     match matches.subcommand() {
         ("list", Some(_clone_matches)) => {
-            list_posts()
+            list_posts(state)
         }
         ("show", Some(_clone_matches)) => {
             // UGLY get's the subcommand arg, unwraps it, parses it as i32, unwraps that or on fail gives it a value of 1
             // Rinse, repeat, soak eyes in bleach
             let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            show_post(this_post)
+            show_post(state, this_post)
         }
         ("post", Some(_clone_matches)) => {
-            write_post()
+            write_post(state)
         }
         ("epost", Some(_clone_matches)) => {
             let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            edit_post(this_post)
+            edit_post(state, this_post)
         }
         ("depost", Some(_clone_matches)) => {
             let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            delete_a_post(this_post)
+            delete_a_post(state, this_post)
         }
         ("link", Some(_clone_matches)) => {
-            write_link()
+            write_link(state)
         }
         ("delink", Some(_clone_matches)) => {
             let link_id = _clone_matches.value_of("link_id").unwrap().parse::<i32>().unwrap_or(0);
-            delete_a_link(link_id)
+            delete_a_link(state, link_id)
         }
         ("export", Some(_clone_matches)) => {
             let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
             let export_filename = _clone_matches.value_of("export_filename").unwrap();
-            export_post(this_post, export_filename)
+            export_post(state, this_post, export_filename)
         }
         ("import", Some(_clone_matches)) => {
             // println!("NOT IMPLEMENTED!  Import new post from filename {:#?}", _clone_matches.value_of("import_filename"))
             let import_filename = _clone_matches.value_of("import_filename").unwrap();
-            import_post(import_filename)
+            import_post(state, import_filename)
         }
         ("testing", Some(_clone_matches)) => {
             let output = input("promted$: ");
@@ -86,6 +129,7 @@ fn main() {
 
 }
 
+// <-- Helper Functions -->
 fn input(prompt: &str) -> String {
     let mut editor = Editor::<()>::new();
     // @TODO get history working
@@ -111,7 +155,8 @@ fn input(prompt: &str) -> String {
     }
 }
 
-fn list_posts() {
+// <-- Primary functions -->
+fn list_posts(state: State) {
     let all_posts: Vec<Post> = read_all_posts();
     println!("Displaying {} posts:", all_posts.len());
 
@@ -123,7 +168,7 @@ fn list_posts() {
     table.printstd();
 }
 
-fn write_post() {
+fn write_post(state: State) {
 
     println!("Writing Post.");
     let raw_title = input("Title: ");
@@ -157,7 +202,7 @@ fn write_post() {
     println!("\nSaved {} with id {}", &rawpost.title, post.id)
 }
 
-fn edit_post(post_id: i32) {
+fn edit_post(state: State, post_id: i32) {
     println!("Editing post {}", post_id);
 
     let some_file = NamedTempFile::new();
@@ -182,7 +227,7 @@ fn edit_post(post_id: i32) {
 
 }
 
-fn show_post(post_id: i32) {
+fn show_post(state: State, post_id: i32) {
     println!("Showing post {}", post_id);
 
     let output: Post = read_post(post_id);
@@ -193,12 +238,12 @@ fn show_post(post_id: i32) {
     table.printstd();
 }
 
-fn delete_a_post(post_id: i32) {
+fn delete_a_post(state: State, post_id: i32) {
     println!("Deleting post {}", post_id);
     delete_post(post_id)
 }
 
-fn write_link() {
+fn write_link(state: State) {
     println!("Writing Link");
     let raw_text = input("Display text: ");
     let raw_title = input("Hover title: ");
@@ -217,12 +262,12 @@ fn write_link() {
 
 }
 
-fn delete_a_link(link_id: i32) {
+fn delete_a_link(state: State, link_id: i32) {
     println!("Deleting link {}", link_id);
     delete_link(link_id)
 }
 
-fn export_post(this_post: i32, export_filename: &str) {
+fn export_post(state: State, this_post: i32, export_filename: &str) {
     println!("Exporting post ID {} to filename {}", &this_post, &export_filename);
     let post_to_export = read_post(this_post);
 
@@ -241,7 +286,7 @@ fn export_post(this_post: i32, export_filename: &str) {
 
 }
 
-fn import_post(import_filename: &str) {
+fn import_post(state: State, import_filename: &str) {
     println!("Importing filename {} as a piece of Post content", &import_filename);
     let file_string = fs::read_to_string(import_filename)
         .expect("Could not open the import filename");
