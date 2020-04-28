@@ -172,10 +172,3 @@ pub fn publish_link(link_id: i32) -> Link {
 //     posts.filter(id.eq(&post_id))
 //         .first::<Post>(&connection)
 // }
-
-#[cfg(test)]
-mod tests {
-    fn it_works() {
-        assert_eq!(2 + 2 = 4);
-    }
-}

@@ -55,20 +55,22 @@ use rustyline::Editor;
 ///
 struct State {
     verbose: bool,
+    debug: bool,
     // interactive: bool, // Just thinking out loud
-    // connection: SomeConnectionPool, // Just thinking out loud
+    // connection: SomeConnectionPool,
 }
 
 impl State {
     fn new() -> State {
         State {
             verbose: false,
+            debug: false,
         }
     }
 }
 
+// Setup initial state and parse args to modify state or trigger functions
 fn main() {
-    // <-- Parse args and set initial app state -->
     let mut state = State::new();
     use clap::{load_yaml, App};
 
@@ -79,6 +81,9 @@ fn main() {
     // This will work for arg flags
     if matches.is_present("verbose") {
         state.verbose = true;
+    }
+    if matches.is_present("debug") {
+        state.debug = true;
     }
 
     match matches.subcommand() {
@@ -158,26 +163,31 @@ fn input(prompt: &str) -> String {
 // <-- Primary functions -->
 fn list_posts(state: State) {
     let all_posts: Vec<Post> = read_all_posts();
-    println!("Displaying {} posts:", all_posts.len());
+    if state.verbose {
+        println!("Displaying {} posts:", all_posts.len());
+    }
 
     let mut table = Table::new();
-    table.add_row(row!["ID", "TITLE"]);
+    table.add_row(row!["ID", "TITLE", "TAGS", "TIME"]);
     for post in all_posts {
-        table.add_row(row![&post.id, &post.title]);
+        table.add_row(row![&post.id, &post.title, &post.tags, &post.time]);
     }
     table.printstd();
 }
 
 fn write_post(state: State) {
-
-    println!("Writing Post.");
+    if state.verbose {
+        println!("Writing Post.");
+    }
     let raw_title = input("Title: ");
 
     let some_file = NamedTempFile::new();
     let file_path = String::from(some_file.unwrap().path().to_string_lossy());
-    println!("Writing Body...");
-    let delay = time::Duration::from_millis(750);
-    thread::sleep(delay);
+    if state.verbose {
+        println!("Writing Body...");
+        let delay = time::Duration::from_millis(750);
+        thread::sleep(delay);
+    }
 
     subprocess::Exec::cmd("vim")
         .arg(&file_path)
@@ -199,11 +209,15 @@ fn write_post(state: State) {
     };
 
     let post = create_post(&rawpost);
-    println!("\nSaved {} with id {}", &rawpost.title, post.id)
+    if state.verbose {
+        println!("\nSaved {} with id {}", &rawpost.title, post.id);
+    }
 }
 
 fn edit_post(state: State, post_id: i32) {
-    println!("Editing post {}", post_id);
+    if state.verbose {
+        println!("Editing post {}", post_id);
+    }
 
     let some_file = NamedTempFile::new();
     let file_path = String::from(some_file.unwrap().path().to_string_lossy());
@@ -223,12 +237,17 @@ fn edit_post(state: State, post_id: i32) {
     };
 
     let result = update_post(&updated_post).unwrap();
-    println!("Update post result: {}", &result)
+
+    if state.verbose {
+        println!("Update post result: {}", &result);
+    }
 
 }
 
 fn show_post(state: State, post_id: i32) {
-    println!("Showing post {}", post_id);
+    if state.verbose {
+        println!("Showing post {}", post_id);
+    }
 
     let output: Post = read_post(post_id);
 
@@ -239,12 +258,16 @@ fn show_post(state: State, post_id: i32) {
 }
 
 fn delete_a_post(state: State, post_id: i32) {
-    println!("Deleting post {}", post_id);
+    if state.verbose {
+        println!("Deleting post {}", post_id);
+    }
     delete_post(post_id)
 }
 
 fn write_link(state: State) {
-    println!("Writing Link");
+    if state.verbose {
+        println!("Writing Link");
+    }
     let raw_text = input("Display text: ");
     let raw_title = input("Hover title: ");
     let raw_url = input("Link URL: ");
@@ -258,17 +281,23 @@ fn write_link(state: State) {
     };
 
     let link = create_link(&rawlink);
-    println!("\nSaved {} with id {}", &link.text, &link.id)
+    if state.verbose {
+        println!("\nSaved {} with id {}", &link.text, &link.id);
+    }
 
 }
 
 fn delete_a_link(state: State, link_id: i32) {
-    println!("Deleting link {}", link_id);
+    if state.verbose {
+        println!("Deleting link {}", link_id);
+    }
     delete_link(link_id)
 }
 
 fn export_post(state: State, this_post: i32, export_filename: &str) {
-    println!("Exporting post ID {} to filename {}", &this_post, &export_filename);
+    if state.verbose {
+        println!("Exporting post ID {} to filename {}", &this_post, &export_filename);
+    }
     let post_to_export = read_post(this_post);
 
     let post_json = json!({
@@ -278,7 +307,9 @@ fn export_post(state: State, this_post: i32, export_filename: &str) {
         "body": &post_to_export.body,
     });
 
-    println!("JSON out: {}", post_json.to_string());
+    if state.verbose {
+        println!("JSON out: {}", post_json.to_string());
+    }
     let mut file = fs::File::create(&export_filename)
         .expect("Problem creating export file");
     file.write_all(post_json.to_string().as_bytes())
@@ -287,11 +318,15 @@ fn export_post(state: State, this_post: i32, export_filename: &str) {
 }
 
 fn import_post(state: State, import_filename: &str) {
-    println!("Importing filename {} as a piece of Post content", &import_filename);
+    if state.verbose {
+        println!("Importing filename {} as a piece of Post content", &import_filename);
+    }
     let file_string = fs::read_to_string(import_filename)
         .expect("Could not open the import filename");
     let imported_post: Post = serde_json::from_str(&file_string).unwrap();
 
     let result = update_post(&imported_post).unwrap();
-    println!("Imported post result: {}", &result)
+    if state.verbose {
+        println!("Imported post result: {}", &result)
+    }
 }
