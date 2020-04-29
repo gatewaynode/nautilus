@@ -29,12 +29,6 @@ pub fn create_post(content: &NewPost) -> Post {
 
     let connection = establish_connection();
 
-    // Just used the passed struct???
-    // let new_post = NewPost {
-    //     title: content.title,
-    //     body: content.body,
-    // };
-
     diesel::insert_into(posts::table)
         .values(content)
         .get_result(&connection)

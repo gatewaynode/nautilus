@@ -201,11 +201,13 @@ fn write_post(state: State) {
         .expect("Could not cleanup temp file");
 
     let raw_tags = input("Tags: ");
+    let raw_summary = input("Summary: ");
 
     let rawpost = NewPost {
         title: &raw_title,
         body: &contents,
         tags: &raw_tags,
+        summary: &raw_summary,
     };
 
     let post = create_post(&rawpost);
