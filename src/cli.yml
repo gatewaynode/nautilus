@@ -49,6 +49,22 @@ subcommands:
                 help: The post id number (position 1)
                 index: 1
                 required: true
+            - title:
+                short: t
+                long: title
+                takes_value: false
+            - body:
+                short: b
+                long: body
+                takes_value: false
+            - tags:
+                short: g
+                long: tags
+                takes_value: false
+            - summary:
+                short: s
+                long: summary
+                takes_value: false
     - depost:
         about: delete a post by post_id number (sub args)
         version: "1.0"
