@@ -132,7 +132,7 @@ pub fn read_links_by_filter_limit(filter_value: String, limit_value: i64) -> Vec
     links
         .filter(tags.like(&real_filter_value))
         .limit(limit_value)
-        .order(id.asc())
+        .order(id.desc())
         .load::<Link>(&connection)
         .expect("Error loading links")
 }
