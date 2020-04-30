@@ -9,6 +9,8 @@ pub struct Post {
     pub body: String,
     pub time: chrono::NaiveDateTime,
     pub tags: String,
+    pub summary: String,
+    pub comment_url: String,
 }
 
 #[derive(Insertable)]
@@ -17,6 +19,7 @@ pub struct NewPost<'a> {
     pub title: &'a str,
     pub body: &'a str,
     pub tags: &'a str,
+    pub summary: &'a str,
 }
 
 #[derive(Queryable, Identifiable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]

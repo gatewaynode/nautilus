@@ -18,6 +18,8 @@ table! {
         body -> Text,
         time -> Timestamptz,
         tags -> Varchar,
+        summary -> Varchar,
+        comment_url -> Varchar,
     }
 }
 
