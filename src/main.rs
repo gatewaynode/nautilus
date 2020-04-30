@@ -19,7 +19,7 @@ use nautilus::*;
 use std::{thread, time};
 use std::io::prelude::*;
 use std::process::exit;
-use self::models::{Post, NewPost, NewLink};
+use self::models::{Post, NewPost, Link, NewLink};
 use prettytable::{Table};
 use serde_json::json;
 use rustyline::error::ReadlineError;
@@ -59,6 +59,9 @@ struct State {
     edit_body: bool,
     edit_tags: bool,
     edit_summary: bool,
+    edit_text: bool,
+    edit_url: bool,
+    edit_all: bool,
     // interactive: bool, // Just thinking out loud
     // connection: SomeConnectionPool,
 }
@@ -72,6 +75,9 @@ impl State {
             edit_body: false,
             edit_tags: false,
             edit_summary: false,
+            edit_text: false,
+            edit_url: false,
+            edit_all: false,
         }
     }
 }
@@ -97,6 +103,9 @@ fn main() {
         ("list", Some(_clone_matches)) => {
             list_posts(state)
         }
+        ("slink", Some(_clone_matches)) => {
+            show_links(state)
+        }
         ("show", Some(_clone_matches)) => {
             // UGLY get's the subcommand arg, unwraps it, parses it as i32, unwraps that or on fail gives it a value of 1
             // Rinse, repeat, soak eyes in bleach
@@ -120,6 +129,9 @@ fn main() {
             if _clone_matches.is_present("summary") {
                 state.edit_summary = true;
             }
+            if _clone_matches.is_present("all") {
+                state.edit_all = true;
+            }
             edit_post(state, this_post)
         }
         ("depost", Some(_clone_matches)) => {
@@ -128,6 +140,25 @@ fn main() {
         }
         ("link", Some(_clone_matches)) => {
             write_link(state)
+        }
+        ("elink", Some(_clone_matches)) => {
+            let this_link = _clone_matches.value_of("link_id").unwrap().parse::<i32>().unwrap_or(0);
+            if _clone_matches.is_present("title") {
+                state.edit_title = true;
+            }
+            if _clone_matches.is_present("body") {
+                state.edit_body = true;
+            }
+            if _clone_matches.is_present("tags") {
+                state.edit_tags = true;
+            }
+            if _clone_matches.is_present("summary") {
+                state.edit_summary = true;
+            }
+            if _clone_matches.is_present("all") {
+                state.edit_all = true;
+            }
+            edit_link(state, this_link)
         }
         ("delink", Some(_clone_matches)) => {
             let link_id = _clone_matches.value_of("link_id").unwrap().parse::<i32>().unwrap_or(0);
@@ -207,9 +238,23 @@ fn list_posts(state: State) {
     }
 
     let mut table = Table::new();
-    table.add_row(row!["ID", "TITLE", "TAGS", "TIME"]);
+    table.add_row(row!["ID", "TITLE", "SUMMARY", "TAGS", "TIME"]);
     for post in all_posts {
-        table.add_row(row![&post.id, &post.title, &post.tags, &post.time]);
+        table.add_row(row![&post.id, &post.title, &post.summary, &post.tags, &post.time]);
+    }
+    table.printstd();
+}
+
+fn show_links(state: State) {
+    let all_links: Vec<Link> = read_all_links();
+    if state.verbose {
+        println!("Displaying {} links:", all_links.len());
+    }
+
+    let mut table = Table::new();
+    table.add_row(row!["ID", "TEXT", "URL", "TITLE", "TIME"]);
+    for link in all_links {
+        table.add_row(row![&link.id, &link.text, &link.url, &link.title, &link.time]);
     }
     table.printstd();
 }
@@ -255,11 +300,12 @@ fn write_post(state: State) {
     }
 }
 
+
 fn edit_post(mut state: State, post_id: i32) {
     if state.verbose {
         println!("Editing post {}", post_id);
     }
-    if !state.edit_title && !state.edit_body && !state.edit_tags && !state.edit_summary {
+    if !state.edit_title && !state.edit_body && !state.edit_tags && !state.edit_summary && !state.edit_all {
         if state.verbose {
             println!("No fields selected, assuming body...");
         }
@@ -274,10 +320,10 @@ fn edit_post(mut state: State, post_id: i32) {
     let mut raw_tags: String = current_content.tags.clone();
     let mut raw_summary: String = current_content.summary.clone();
 
-    if state.edit_title {
+    if state.edit_title || state.edit_all {
         raw_title = edit("Edit title: ", &raw_title);
     }
-    if state.edit_body {
+    if state.edit_body || state.edit_all {
         let some_file = NamedTempFile::new();
         let file_path = String::from(some_file.unwrap().path().to_string_lossy());
         fs::write(&file_path, current_content.body)
@@ -289,15 +335,11 @@ fn edit_post(mut state: State, post_id: i32) {
             .unwrap();
 
         raw_body = fs::read_to_string(&file_path).unwrap();
-        // let updated_post = Post {
-        //     body: fs::read_to_string(&file_path).unwrap(),
-        //     ..current_content
-        // };
     }
-    if state.edit_tags {
+    if state.edit_tags || state.edit_all {
         raw_tags = edit("Edit tags: ", &raw_tags);
     }
-    if state.edit_summary {
+    if state.edit_summary || state.edit_all {
         raw_summary = edit("Edit summary: ", &raw_summary);
     }
 
@@ -309,7 +351,6 @@ fn edit_post(mut state: State, post_id: i32) {
         ..current_content
     };
 
-    // let result = update_post(&updated_post).unwrap();
     let result = update_post(&edited_content).unwrap();
 
     if state.verbose {
@@ -359,6 +400,52 @@ fn write_link(state: State) {
         println!("\nSaved {} with id {}", &link.text, &link.id);
     }
 
+}
+
+fn edit_link(mut state: State, link_id: i32) {
+    if state.verbose {
+        println!("Editing link {}", link_id);
+    }
+    if !state.edit_text && !state.edit_title && !state.edit_url && !state.edit_tags && !state.edit_all{
+        if state.verbose {
+            println!("No fields selected, assuming url...");
+        }
+        state.edit_url = true;
+    }
+
+    let current_content: Link = read_link(link_id);
+
+    let mut raw_text: String = current_content.text.clone();
+    let mut raw_title: String = current_content.title.clone();
+    let mut raw_url: String = current_content.url.clone();
+    let mut raw_tags: String = current_content.tags.clone();
+
+    if state.edit_text || state.edit_all {
+        raw_text = edit("Edit text: ", &raw_text);
+    }
+    if state.edit_title || state.edit_all {
+        raw_title = edit("Edit title: ", &raw_title);
+    }
+    if state.edit_url || state.edit_all {
+        raw_url = edit("Edit url: ", &raw_url);
+    }
+    if state.edit_tags || state.edit_all{
+        raw_tags = edit("Edit tags: ", &raw_tags);
+    }
+
+    let edited_content = Link {
+        text: raw_text,
+        title: raw_title,
+        url: raw_url,
+        tags: raw_tags,
+        ..current_content
+    };
+
+    let result = update_link(&edited_content).unwrap();
+
+    if state.verbose {
+        println!("Update post result: {}", &result);
+    }
 }
 
 fn delete_a_link(state: State, link_id: i32) {

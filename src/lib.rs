@@ -100,6 +100,17 @@ pub fn delete_post(post_id: i32) {
         .expect("Error deleting post");
 }
 
+pub fn read_link(link_id: i32) -> Link{
+    use schema::links::dsl::*;
+
+    let connection = establish_connection();
+
+    links.filter(id.eq(link_id))
+        .limit(1)
+        .get_result::<Link>(&connection)
+        .expect("Error loading post by that ID")
+}
+
 pub fn read_all_links() -> Vec<Link> {
     use schema::links::dsl::*;
 
@@ -135,6 +146,13 @@ pub fn create_link(content: &NewLink) -> Link {
         .values(content)
         .get_result(&connection)
         .expect("Error saving new link")
+}
+
+pub fn update_link(content: &Link) -> QueryResult<usize>{
+    let connection = establish_connection();
+
+    diesel::update(content).set(content).execute(&connection)
+
 }
 
 pub fn delete_link(link_id: i32) {
