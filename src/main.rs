@@ -466,6 +466,9 @@ fn export_post(state: State, this_post: i32, export_filename: &str) {
         "published": &post_to_export.published,
         "title": &post_to_export.title,
         "body": &post_to_export.body,
+        "time": &post_to_export.time,
+        "tags": &post_to_export.tags,
+        "summary": &post_to_export.summary,
     });
 
     if state.verbose {
