@@ -1,4 +1,4 @@
-use crate::schema::{posts, links};
+use crate::schema::{posts, links, system};
 use crate::serde_derive::{Serialize, Deserialize};
 
 #[derive(Queryable, Identifiable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]
@@ -40,4 +40,19 @@ pub struct NewLink<'a> {
     pub title: &'a str,
     pub url: &'a str,
     pub tags: &'a str,
+}
+
+#[derive(Queryable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]
+#[table_name="system"]
+pub struct System {
+    pub key: String,
+    pub data: String,
+    pub time: chrono::NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name="system"]
+pub struct NewSystem<'a> {
+    pub key: &'a str,
+    pub data: &'a str,
 }

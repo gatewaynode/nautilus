@@ -27,7 +27,6 @@ use rustyline::Editor;
 
 
 // @TODO Edit should take field types as arguments or open interactive choice of fields to edit
-// @TODO Add post_id checking standard handler (currently just fails if the post_id doesn't exist)
 // @TODO Default mode should be interactive if no args or subcommands are received
 // @TODO Need the import function to handle insert new as well as update existing
 // @TODO Navigation content type (maybe just use links tagged nav????)
@@ -62,8 +61,6 @@ struct State {
     edit_text: bool,
     edit_url: bool,
     edit_all: bool,
-    // interactive: bool, // Just thinking out loud
-    // connection: SomeConnectionPool,
 }
 
 impl State {
