@@ -155,6 +155,15 @@ pub fn update_link(content: &Link) -> QueryResult<usize> {
 
 }
 
+pub fn read_all_system() -> Vec<System> {
+    use schema::system::dsl::*;
+    let connection = establish_connection();
+
+    system
+        .load::<System>(&connection)
+        .expect("Error loading system")
+}
+
 pub fn read_system(system_key: String) -> System {
     use schema::system::dsl::*;
 
@@ -181,6 +190,15 @@ pub fn update_system(content: &System) -> QueryResult<usize> {
     let connection = establish_connection();
 
     diesel::update(system::table).set(content).execute(&connection)
+}
+
+pub fn delete_system(system_key: &str) {
+    use schema::system::dsl::*;
+    let connection = establish_connection();
+
+    diesel::delete(system.filter(key.like(system_key)))
+        .execute(&connection)
+        .expect("Error deleting system");
 }
 
 pub fn delete_link(link_id: i32) {

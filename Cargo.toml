@@ -22,3 +22,5 @@ serde_json = "1.0"
 serde_derive = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 rustyline = "6.1"
+simple_prompts = "0.1.2"
+vim_edit = "0.1.0"
