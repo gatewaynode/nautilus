@@ -13,7 +13,15 @@ use dotenv::dotenv;
 use std::env;
 use self::models::{Post, Link, NewPost, NewLink, System, NewSystem};
 
-
+/// Create a database connection.  Does not use pools, so this is not suitable for prod connections.
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn connection_test() {
+///   let connection = establish_connection();
+/// }
+/// ```
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
 
@@ -23,7 +31,25 @@ pub fn establish_connection() -> PgConnection {
         .expect("Error connecting to database.")
 }
 
-
+/// Enter a NewPost struct into the database (tracks closely to Post without the auto fields).
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{NewPost};
+///
+/// fn post_something() {
+///   let thingy = NewPost {
+///     title: "Something",
+///     body: "Something",
+///     summary: "Something",
+///     tags: "This, That",
+///   };
+///
+///   let newpost = create_post(&thingy);
+///   println!("{:?}", newpost)
+///
+/// }
+/// ```
 pub fn create_post(content: &NewPost) -> Post {
     use schema::posts;
 
@@ -35,6 +61,35 @@ pub fn create_post(content: &NewPost) -> Post {
         .expect("Error saving new post")
 }
 
+
+/// Update an existing post
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{Post};
+///
+/// // Note the next 3 lines are just needed to pass the doctest or if your are manually setting time
+/// extern crate chrono;
+/// use chrono::{NaiveDate, NaiveDateTime};
+/// use chrono::format::ParseError;
+///
+/// fn update_some_post() {
+///   let thingy = Post {
+///     id: 1,
+///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///     published: false,
+///     title: String::from("Somethin else"),
+///     body: String::from("Something"),
+///     summary: String::from("Something else"),
+///     tags: String::from("This, That"),
+///     comment_url: String::from("https://www.google.com"),
+///   };
+///
+///   let newpost = update_post(&thingy);
+///   println!("{:?}", newpost);
+///
+/// }
+/// ```
 pub fn update_post(content: &Post) -> QueryResult<usize>{
     let connection = establish_connection();
 
@@ -42,6 +97,16 @@ pub fn update_post(content: &Post) -> QueryResult<usize>{
 
 }
 
+/// Read a post by post id
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn update_some_post() {
+///   let some_post = read_post(1);
+///   println!("{}", some_post.body)
+/// }
+/// ```
 pub fn read_post(post_id: i32) -> Post{
     use schema::posts::dsl::*;
 
@@ -53,6 +118,18 @@ pub fn read_post(post_id: i32) -> Post{
         .expect("Error loading post by that ID")
 }
 
+/// Read all the posts into a Vec that can be iterated through
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn update_some_post() {
+///   let all_posts = read_all_posts();
+///   for post in all_posts {
+///     println!("{}", post.title);
+///   }
+/// }
+/// ```
 pub fn read_all_posts() -> Vec<Post> {
     use schema::posts::dsl::*;
 
@@ -64,6 +141,19 @@ pub fn read_all_posts() -> Vec<Post> {
         .expect("Error loading posts")
 }
 
+
+/// Read all the posts with a given tag pattern up to the given limit.
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn update_some_post() {
+///   let all_posts = read_posts_by_filter_limit(String::from("Groovy"), 5);
+///   for post in all_posts {
+///     println!("{}", post.title);
+///   }
+/// }
+/// ```
 pub fn read_posts_by_filter_limit(filter_value: String, limit_value: i64) -> Vec<Post> {
     use schema::posts::dsl::*;
 
@@ -79,6 +169,7 @@ pub fn read_posts_by_filter_limit(filter_value: String, limit_value: i64) -> Vec
         .expect("Error loading posts")
 }
 
+/// Currently not in use, but when it is it simply sets the published field to ``true``
 pub fn publish_post(post_id: i32) -> Post {
     use schema::posts::dsl::{posts, published};
 
@@ -90,6 +181,15 @@ pub fn publish_post(post_id: i32) -> Post {
         .expect("Unable to find post number")
 }
 
+/// Delete a post by post id
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn delete_post(post_id: i32) {
+///   delete_post(post_id)
+/// }
+/// ```
 pub fn delete_post(post_id: i32) {
     use schema::posts::dsl::*;
 

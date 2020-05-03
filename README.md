@@ -1,28 +1,78 @@
 Nautilus
 ========
-A simple command line CMS for management of simple blog like data stores.
-------------------------------------------------------------------
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/gatewaynode/nautilus/Rust)
+
+A simple headless, command line CMS for management of simple blog like data stores.
+---------------------------------------------------------------------------
 This has been a simple learning project for myself for both the Rust language
 and crates like Diesel ORM, Clap, Serde and such.  Much of it is based on the
-Diesel simple CLI tutorial not so much the advanced CLI example in Diesel.  
-The project is pretty quickly moving away from that and not much will resemble
-it soon.   
+Diesel simple CLI tutorial not so much the advanced CLI example in the Diesel
+source.  The project is pretty quickly moving away from that and not much will
+resemble it soon.   
 
 Differences from the Diesel Simple CLI tutorial:
-* Argument parsing with Clap allows a more standard arrangement of parts between ``cli.yml``, ``lib.rs`` and ``main.rs``
-* CRUD functions changed to a fuller workflow (for me at least, publish flagging dropped)
+* Argument parsing with Clap allows a more standard arrangement of parts between
+``cli.yml``, ``lib.rs`` and ``main.rs``
+* CRUD functions changed to a fuller workflow (for me at least, publish flagging
+  dropped)
 * Use of VIM as a content editor
+* Post and Links content types, a managed System table also exists for internal
+things
 * Import an existing post from JSON
 * Export a post to JSON
 
-Usage
------
-There are no release binaries yet, this will need to be compiled with Cargo.
+Installation
+---------------
+1. Clone the git repo and change into that directory
+1. Install PostgreSQL DB and create an empty database with full acces for your
+user
+1. The ``example.env`` should be changed to a regular ``.env`` file with the
+appropriate creds and such before this will work.
+1. Use the [Diesel](https://diesel.rs/guides/getting-started/) directions for
+setting up the database (``diesel setup`` --> ``diesel migration run``)
+with those sorts of things.
+1. ``cargo run post`` to build and create your first post
+1. ``cargo run list`` to see the posts in the database
+1. I recommend symlinking to the binary from your ``~/.local/bin/`` directory
+for easier use
+
+The Basics
+----------
+
+It's important to understand this is only a CLI interface to a database.  To
+actually host the database content in a website you need to manually embed the
+lib.rs, schema.rs and models.rs files in a web server framework (like I do with
+[Rocket](https://rocket.rs)).  By manually I mean I symlink them right now, but
+there will be a crate to make this easier in the near future.
+
+The reasons this isn't directly integrated with a web framework circle around
+two concepts: one, "compartmentalization of concerns" provides better security;
+two, "modularity" let's me move the data around to several different web
+frameworks easily without worrying about the CMS becoming web framework
+dependent.  Also in the vein of the web framework work, there is no reason this
+can't be used to power an app with a mobile or desktop UI since it's just
+creating and structuring content in a PostgreSQL DB.
+
+From the CLI there are sub-commands like ``post`` to create blog like posts,
+with variants such as ``epost #`` to edit a post by number, ``dpost`` to delete
+posts.  Also similar commands exist for ``link`` and ``system`` to manage those
+pieces of content.
+
+The Roadmap
+-----------
+* Finish web support basics so a fully functioning blog can be setup with this.
+* Create an interactive mode (this is actually supposed to be the default but
+  the REPL can wait until the basics work)
+* There are some binaries compiles on an AMD64 in the potential binary
+section, these are primarily for testing at this point (should work on the
+right arch)
+* Build and document different heads: web frameworks, mobile frameworks, desktop
+UI, GraphQL API, REST API
+
 
 ```
-nautilus [OPTIONS] [SUBCOMMAND]
-
-n4 [FLAGS] [SUBCOMMAND]
+USAGE:
+    nautilus [FLAGS] [SUBCOMMAND]
 
 FLAGS:
     -d, --debug      Output internal variables
@@ -33,7 +83,10 @@ FLAGS:
 SUBCOMMANDS:
     delink     delete a link by id (sub args)
     depost     delete a post by post_id number (sub args)
-    epost      edit a post by post_id (sub args)
+    dsystem    Delete a system value by key
+    elink      edit a link by link_id and field arg
+    epost      edit a post by post_id and field arg
+    esystem    Edit a system value by key
     export     export a post by post_id to a file (sub args)
     help       Prints this message or the help of the given subcommand(s)
     import     import a post from a file (sub args)
@@ -41,7 +94,11 @@ SUBCOMMANDS:
     list       list post contents
     post       create a piece of post content
     show       show a blog post by id (sub args)
+    slink      Show all links
+    ssystem    Show system entry data
+    system     Enter a system value
     testing    Don't use this, it's for prototyping new functions
+
 
 ```
 
@@ -96,18 +153,9 @@ Writing Body...
 Saved My Awesome Title with id 1
 ```
 
-Bits and Pieces
----------------
-* The ``example.env`` should be changed to a regular ``.env`` file with the
-appropriate creds and such before this will work.
-* Use the Diesel directions for setting up the database or don't if your handy
-with those sorts of things.
-* Only tested with local PostgreSQL DB's just so you know.
-
 Use at your own risk
 ====================
-This is beginning to mature and is functional for my use cases so far, but it is
-far from intuitive and I'm sure there are bugs.  I'm using it to power
-[gatewaynode.com](https://gatewaynode.com) but that's a very custom website
-build so it may or may not work for you.  Maybe there will be a 0.1 release in
-a month or so.
+This is usable, but it is far from intuitive and I'm sure there are bugs.  I'm
+using it to power [gatewaynode.com](https://gatewaynode.com) but that's a very
+custom website build so it may or may not work for you.  Maybe there will be a
+0.1 release in a month or so.
