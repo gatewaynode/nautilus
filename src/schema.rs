@@ -23,7 +23,16 @@ table! {
     }
 }
 
+table! {
+    system (key) {
+        key -> Varchar,
+        data -> Varchar,
+        time -> Timestamptz,
+    }
+}
+
 allow_tables_to_appear_in_same_query!(
     links,
     posts,
+    system,
 );

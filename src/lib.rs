@@ -11,7 +11,7 @@ use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
 use std::env;
-use self::models::{Post, Link, NewPost, NewLink};
+use self::models::{Post, Link, NewPost, NewLink, System, NewSystem};
 
 
 pub fn establish_connection() -> PgConnection {
@@ -148,11 +148,57 @@ pub fn create_link(content: &NewLink) -> Link {
         .expect("Error saving new link")
 }
 
-pub fn update_link(content: &Link) -> QueryResult<usize>{
+pub fn update_link(content: &Link) -> QueryResult<usize> {
     let connection = establish_connection();
 
     diesel::update(content).set(content).execute(&connection)
 
+}
+
+pub fn read_all_system() -> Vec<System> {
+    use schema::system::dsl::*;
+    let connection = establish_connection();
+
+    system
+        .load::<System>(&connection)
+        .expect("Error loading system")
+}
+
+pub fn read_system(system_key: String) -> System {
+    use schema::system::dsl::*;
+
+    let connection = establish_connection();
+
+    system.filter(key.like(&system_key))
+        .limit(1)
+        .get_result::<System>(&connection)
+        .expect("System key error")
+}
+
+pub fn create_system(content: &NewSystem) -> System {
+    use schema::system;
+
+    let connection = establish_connection();
+    diesel::insert_into(system::table)
+        .values(content)
+        .get_result(&connection)
+        .expect("Error saving new link")
+}
+
+pub fn update_system(content: &System) -> QueryResult<usize> {
+    use schema::system;
+    let connection = establish_connection();
+
+    diesel::update(system::table).set(content).execute(&connection)
+}
+
+pub fn delete_system(system_key: &str) {
+    use schema::system::dsl::*;
+    let connection = establish_connection();
+
+    diesel::delete(system.filter(key.like(system_key)))
+        .execute(&connection)
+        .expect("Error deleting system");
 }
 
 pub fn delete_link(link_id: i32) {
@@ -175,12 +221,3 @@ pub fn publish_link(link_id: i32) -> Link {
         .get_result::<Link>(&connection)
         .expect("Unable to find post number")
 }
-
-// @TODO Not immediately necessary, but needs to be done
-// pub fn does_id_exist(post_id: i32) -> bool {
-//     use schema::posts::dsl::*;
-//     let connection = establish_connection();
-//
-//     posts.filter(id.eq(&post_id))
-//         .first::<Post>(&connection)
-// }

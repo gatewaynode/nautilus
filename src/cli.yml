@@ -131,6 +131,33 @@ subcommands:
         version: "1.0"
         author: anon
         takes_value: false
+    - ssystem:
+        about: Show system entry data
+        version: "1.0"
+        author: anon
+    - system:
+        about: Enter a system value
+        version: "1.0"
+        author: anon
+        takes_value: false
+    - esystem:
+        about: Edit a system value by key
+        version: "1.0"
+        author: anon
+        args:
+            system_key:
+                help: The key for the system data
+                required: true
+                index: 1
+    - dsystem:
+        about: Delete a system value by key
+        version: "1.0"
+        author: anon
+        args:
+            - system_key:
+                help: The key for the system data
+                required: true
+                index: 1
     - export:
         about: export a post by post_id to a file (sub args)
         version: "1.0"

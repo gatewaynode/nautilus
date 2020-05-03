@@ -13,21 +13,22 @@ extern crate subprocess;
 extern crate tempfile;
 extern crate diesel;
 
-use tempfile::NamedTempFile;
+// use tempfile::NamedTempFile;
 use std::fs;
 use nautilus::*;
 use std::{thread, time};
 use std::io::prelude::*;
-use std::process::exit;
-use self::models::{Post, NewPost, Link, NewLink};
+// use std::process::exit;
+use self::models::{Post, NewPost, Link, NewLink, System, NewSystem};
 use prettytable::{Table};
 use serde_json::json;
-use rustyline::error::ReadlineError;
-use rustyline::Editor;
+// use rustyline::error::ReadlineError;
+// use rustyline::Editor;
+use simple_prompts::{edit_prompt, prompt};
+use vim_edit::{vim_create, vim_edit};
 
 
 // @TODO Edit should take field types as arguments or open interactive choice of fields to edit
-// @TODO Add post_id checking standard handler (currently just fails if the post_id doesn't exist)
 // @TODO Default mode should be interactive if no args or subcommands are received
 // @TODO Need the import function to handle insert new as well as update existing
 // @TODO Navigation content type (maybe just use links tagged nav????)
@@ -62,8 +63,6 @@ struct State {
     edit_text: bool,
     edit_url: bool,
     edit_all: bool,
-    // interactive: bool, // Just thinking out loud
-    // connection: SomeConnectionPool,
 }
 
 impl State {
@@ -164,71 +163,39 @@ fn main() {
             let link_id = _clone_matches.value_of("link_id").unwrap().parse::<i32>().unwrap_or(0);
             delete_a_link(state, link_id)
         }
+        ("ssystem", Some(_clone_matches)) => {
+            show_system(state)
+        }
+        ("system", Some(_clone_matches)) => {
+            write_system(state)
+        }
+        ("esystem", Some(_clone_matches)) => {
+            let system_key = String::from(_clone_matches.value_of("system_key").unwrap());
+            edit_system(state, system_key)
+        }
+        ("dsystem", Some(_clone_matches)) => {
+            let system_key = String::from(_clone_matches.value_of("system_key").unwrap());
+            delete_a_system(state, system_key)
+        }
         ("export", Some(_clone_matches)) => {
             let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
             let export_filename = _clone_matches.value_of("export_filename").unwrap();
             export_post(state, this_post, export_filename)
         }
         ("import", Some(_clone_matches)) => {
-            // println!("NOT IMPLEMENTED!  Import new post from filename {:#?}", _clone_matches.value_of("import_filename"))
             let import_filename = _clone_matches.value_of("import_filename").unwrap();
             import_post(state, import_filename)
         }
         ("testing", Some(_clone_matches)) => {
-            let output = input("promted$: ");
+            let output = prompt("promted$: ");
             println!("output = {:?}", output)
         }
-        ("", None) => println!("No subcommand used"), // @TODO add a default action here
+        ("", None) => println!("No subcommand used"), // @TODO add a default REPL action here
         _ => unreachable!(),
     }
 
 }
 
-// <-- Helper Functions -->
-fn input(prompt: &str) -> String {
-    let mut editor = Editor::<()>::new();
-    // @TODO get history working
-    // if editor.load_history("~/.n4_history.txt").is_err() {
-    //     println!("No previous history found.")
-    // }
-    let readline = editor.readline(&prompt);
-    match readline {
-        Ok(line) => {
-            // editor.add_history_entry(line.as_str());
-            line
-        },
-        Err(ReadlineError::Interrupted) => {
-            exit(0)
-        },
-        Err(ReadlineError::Eof) => {
-            exit(1)
-        }
-        Err(err) => {
-            println!("Error: {:?}", err);
-            exit(1)
-        }
-    }
-}
-
-fn edit(prompt: &str, value: &str) -> String {
-    let mut editor = Editor::<()>::new();
-    let readline = editor.readline_with_initial(prompt, (value, ""));
-    match readline {
-        Ok(line) => {
-            line
-        },
-        Err(ReadlineError::Interrupted) => {
-            exit(0)
-        },
-        Err(ReadlineError::Eof) => {
-            exit(1)
-        }
-        Err(err) => {
-            println!("Error: {:?}", err);
-            exit(1)
-        }
-    }
-}
 
 // <-- Primary functions -->
 fn list_posts(state: State) {
@@ -263,33 +230,20 @@ fn write_post(state: State) {
     if state.verbose {
         println!("Writing Post.");
     }
-    let raw_title = input("Title: ");
-
-    let some_file = NamedTempFile::new();
-    let file_path = String::from(some_file.unwrap().path().to_string_lossy());
+    // let raw_title = input("Title: ");
+    let raw_title = prompt("Title: ");
     if state.verbose {
         println!("Writing Body...");
         let delay = time::Duration::from_millis(750);
         thread::sleep(delay);
     }
-
-    subprocess::Exec::cmd("vim")
-        .arg(&file_path)
-        .join()
-        .unwrap();
-
-    let contents = fs::read_to_string(&file_path)
-        .expect("Something went wrong reading the file");
-
-    fs::remove_file(&file_path)
-        .expect("Could not cleanup temp file");
-
-    let raw_tags = input("Tags: ");
-    let raw_summary = input("Summary: ");
+    let raw_body = vim_create();
+    let raw_tags = prompt("Tags: ");
+    let raw_summary = prompt("Summary: ");
 
     let rawpost = NewPost {
         title: &raw_title,
-        body: &contents,
+        body: &raw_body,
         tags: &raw_tags,
         summary: &raw_summary,
     };
@@ -321,26 +275,16 @@ fn edit_post(mut state: State, post_id: i32) {
     let mut raw_summary: String = current_content.summary.clone();
 
     if state.edit_title || state.edit_all {
-        raw_title = edit("Edit title: ", &raw_title);
+        raw_title = edit_prompt("Edit title: ", &raw_title);
     }
     if state.edit_body || state.edit_all {
-        let some_file = NamedTempFile::new();
-        let file_path = String::from(some_file.unwrap().path().to_string_lossy());
-        fs::write(&file_path, current_content.body)
-            .expect("Something went wrong with writing the temp file");
-
-        subprocess::Exec::cmd("vim")
-            .arg(&file_path)
-            .join()
-            .unwrap();
-
-        raw_body = fs::read_to_string(&file_path).unwrap();
+        raw_body = vim_edit(raw_body);
     }
     if state.edit_tags || state.edit_all {
-        raw_tags = edit("Edit tags: ", &raw_tags);
+        raw_tags = edit_prompt("Edit tags: ", &raw_tags);
     }
     if state.edit_summary || state.edit_all {
-        raw_summary = edit("Edit summary: ", &raw_summary);
+        raw_summary = edit_prompt("Edit summary: ", &raw_summary);
     }
 
     let edited_content = Post {
@@ -354,7 +298,7 @@ fn edit_post(mut state: State, post_id: i32) {
     let result = update_post(&edited_content).unwrap();
 
     if state.verbose {
-        println!("Update post result: {}", &result);
+        println!("Update post result: {:?}", &result);
     }
 
 }
@@ -383,10 +327,10 @@ fn write_link(state: State) {
     if state.verbose {
         println!("Writing Link");
     }
-    let raw_text = input("Display text: ");
-    let raw_title = input("Hover title: ");
-    let raw_url = input("Link URL: ");
-    let raw_tags = input("Tags: ");
+    let raw_text = prompt("Display text: ");
+    let raw_title = prompt("Hover title: ");
+    let raw_url = prompt("Link URL: ");
+    let raw_tags = prompt("Tags: ");
 
     let rawlink = NewLink {
         text: &raw_text,
@@ -421,16 +365,16 @@ fn edit_link(mut state: State, link_id: i32) {
     let mut raw_tags: String = current_content.tags.clone();
 
     if state.edit_text || state.edit_all {
-        raw_text = edit("Edit text: ", &raw_text);
+        raw_text = edit_prompt("Edit text: ", &raw_text);
     }
     if state.edit_title || state.edit_all {
-        raw_title = edit("Edit title: ", &raw_title);
+        raw_title = edit_prompt("Edit title: ", &raw_title);
     }
     if state.edit_url || state.edit_all {
-        raw_url = edit("Edit url: ", &raw_url);
+        raw_url = edit_prompt("Edit url: ", &raw_url);
     }
     if state.edit_tags || state.edit_all{
-        raw_tags = edit("Edit tags: ", &raw_tags);
+        raw_tags = edit_prompt("Edit tags: ", &raw_tags);
     }
 
     let edited_content = Link {
@@ -444,7 +388,7 @@ fn edit_link(mut state: State, link_id: i32) {
     let result = update_link(&edited_content).unwrap();
 
     if state.verbose {
-        println!("Update post result: {}", &result);
+        println!("Update post result: {:?}", &result);
     }
 }
 
@@ -453,6 +397,55 @@ fn delete_a_link(state: State, link_id: i32) {
         println!("Deleting link {}", link_id);
     }
     delete_link(link_id)
+}
+
+fn show_system(state: State) {
+    let all_system: Vec<System> = read_all_system();
+    if state.verbose {
+        println!("Displaying {} system entries:", all_system.len());
+    }
+
+    let mut table = Table::new();
+    table.add_row(row!["KEY", "DATA", "TIME"]);
+    for system in all_system {
+        table.add_row(row![&system.key, &system.data, &system.time]);
+    }
+    table.printstd();
+}
+
+fn write_system(state: State) {
+    if state.verbose {
+        println!("Writing system entry");
+    }
+    let raw_key = prompt("System key: ");
+    let raw_data = prompt("System data: ");
+
+    let rawlink = NewSystem {
+        key: &raw_key,
+        data: &raw_data,
+    };
+
+    let new_system = create_system(&rawlink);
+    if state.verbose {
+        println!("Saved {}", &new_system.key);
+    }
+}
+
+fn edit_system(state: State, system_key: String) {
+    let mut system_values = read_system(system_key);
+    system_values.key = edit_prompt("Edit system key: ", &system_values.key);
+    system_values.data = vim_edit(system_values.data);
+    let updated_system_result = update_system(&system_values);
+    if state.verbose {
+        println!("Updated system: {:?}", &updated_system_result);
+    }
+}
+
+fn delete_a_system(state: State, key: String) {
+    if state.verbose {
+        println!("Deleting system entry: {}", &key);
+    }
+    delete_system(&key)
 }
 
 fn export_post(state: State, this_post: i32, export_filename: &str) {

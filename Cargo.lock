@@ -335,8 +335,10 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "simple_prompts",
  "subprocess",
  "tempfile",
+ "vim_edit",
 ]
 
 [[package]]
@@ -620,6 +622,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "simple_prompts"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e141ba6898b984a69f9323521cdf7de605319f61f4d3b06daac286a2a56aad45"
+dependencies = [
+ "rustyline",
+]
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -772,6 +783,16 @@ name = "version_check"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "078775d0255232fb988e6fccf26ddc9d1ac274299aaedcedce21c6f72cc533ce"
+
+[[package]]
+name = "vim_edit"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "329f17129b7e1d41248d8073e89583aa2b9c4128c2fe9c5e7c4fc51dc923956a"
+dependencies = [
+ "subprocess",
+ "tempfile",
+]
 
 [[package]]
 name = "void"
