@@ -102,7 +102,7 @@ pub fn update_post(content: &Post) -> QueryResult<usize>{
 /// ```
 /// use nautilus::*;
 ///
-/// fn update_some_post() {
+/// fn read_some_post() {
 ///   let some_post = read_post(1);
 ///   println!("{}", some_post.body)
 /// }
@@ -123,7 +123,7 @@ pub fn read_post(post_id: i32) -> Post{
 /// ```
 /// use nautilus::*;
 ///
-/// fn update_some_post() {
+/// fn read_all_the_posts() {
 ///   let all_posts = read_all_posts();
 ///   for post in all_posts {
 ///     println!("{}", post.title);
@@ -147,7 +147,7 @@ pub fn read_all_posts() -> Vec<Post> {
 /// ```
 /// use nautilus::*;
 ///
-/// fn update_some_post() {
+/// fn read_some_posts() {
 ///   let all_posts = read_posts_by_filter_limit(String::from("Groovy"), 5);
 ///   for post in all_posts {
 ///     println!("{}", post.title);
@@ -186,8 +186,8 @@ pub fn publish_post(post_id: i32) -> Post {
 /// ```
 /// use nautilus::*;
 ///
-/// fn delete_post(post_id: i32) {
-///   delete_post(post_id)
+/// fn delete_a_post() {
+///   delete_post(1)
 /// }
 /// ```
 pub fn delete_post(post_id: i32) {
@@ -200,6 +200,16 @@ pub fn delete_post(post_id: i32) {
         .expect("Error deleting post");
 }
 
+/// Read a link by link id
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn read_a_link() {
+///   let some_link = read_link(1);
+///   println!("{}", some_link.text)
+/// }
+/// ```
 pub fn read_link(link_id: i32) -> Link{
     use schema::links::dsl::*;
 
@@ -211,6 +221,19 @@ pub fn read_link(link_id: i32) -> Link{
         .expect("Error loading post by that ID")
 }
 
+/// Read all links
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{Link};
+///
+/// fn read_all_the_links() {
+///   let all_links: Vec<Link> = read_all_links();
+///   for link in all_links {
+///     println!("{}", link.text);
+///   }
+/// }
+/// ```
 pub fn read_all_links() -> Vec<Link> {
     use schema::links::dsl::*;
 
@@ -222,6 +245,19 @@ pub fn read_all_links() -> Vec<Link> {
         .expect("Error loading links")
 }
 
+/// Read all the posts with a given tag pattern up to the given limit.
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{Link};
+///
+/// fn read_some_links() {
+///   let some_links: Vec<Link> = read_links_by_filter_limit(String::from("Groovy"), 5);
+///   for link in some_links {
+///     println!("{}", link.text);
+///   }
+/// }
+/// ```
 pub fn read_links_by_filter_limit(filter_value: String, limit_value: i64) -> Vec<Link> {
     use schema::links::dsl::*;
 
@@ -237,6 +273,25 @@ pub fn read_links_by_filter_limit(filter_value: String, limit_value: i64) -> Vec
         .expect("Error loading links")
 }
 
+/// Enter a NewLink struct into the database (tracks closely to Link without the auto fields).
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{NewLink};
+///
+/// fn link_something() {
+///   let thingy = NewLink {
+///     text: "Something",
+///     title: "Something",
+///     url: "https://duckduckgo.com/",
+///     tags: "This, that",
+///   };
+///
+///   let newlink = create_link(&thingy);
+///   println!("{:?}", newlink)
+///
+/// }
+/// ```
 pub fn create_link(content: &NewLink) -> Link {
     use schema::links;
 
@@ -248,6 +303,33 @@ pub fn create_link(content: &NewLink) -> Link {
         .expect("Error saving new link")
 }
 
+/// Update an existing link
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{Link};
+///
+/// // Note the next 3 lines are just needed to pass the doctest or if your are manually setting time
+/// extern crate chrono;
+/// use chrono::{NaiveDate, NaiveDateTime};
+/// use chrono::format::ParseError;
+///
+/// fn update_some_post() {
+///   let thingy = Link {
+///     id: 1,
+///     published: false,
+///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///     text: String::from("Somethin else"),
+///     title: String::from("Something"),
+///     url: String::from("Something else"),
+///     tags: String::from("This, That"),
+///   };
+///
+///   let uplink = update_link(&thingy);
+///   println!("{:?}", uplink);
+///
+/// }
+/// ```
 pub fn update_link(content: &Link) -> QueryResult<usize> {
     let connection = establish_connection();
 
@@ -255,6 +337,38 @@ pub fn update_link(content: &Link) -> QueryResult<usize> {
 
 }
 
+/// Delete a link by link id
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn delete_a_post() {
+///   delete_post(1)
+/// }
+/// ```
+pub fn delete_link(link_id: i32) {
+    use schema::links::dsl::*;
+
+    let connection = establish_connection();
+
+    diesel::delete(links.filter(id.eq(link_id)))
+        .execute(&connection)
+        .expect("Error deleting link");
+}
+
+/// Read all system entries
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{System};
+///
+/// fn read_all_system_entries() {
+///   let all_systems: Vec<System> = read_all_system();
+///   for system in all_systems {
+///     println!("{}", system.key);
+///   }
+/// }
+/// ```
 pub fn read_all_system() -> Vec<System> {
     use schema::system::dsl::*;
     let connection = establish_connection();
@@ -264,6 +378,16 @@ pub fn read_all_system() -> Vec<System> {
         .expect("Error loading system")
 }
 
+/// Read a system entries by system key value
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn read_a_system_entry() {
+///   let a_system = read_system(String::from("routes"));
+///   println!("{:?}", a_system)
+/// }
+/// ```
 pub fn read_system(system_key: String) -> System {
     use schema::system::dsl::*;
 
@@ -275,6 +399,23 @@ pub fn read_system(system_key: String) -> System {
         .expect("System key error")
 }
 
+/// Enter a NewSystem struct into the database (tracks closely to System without the auto fields).
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{NewSystem};
+///
+/// fn system_something() {
+///   let thingy = NewSystem {
+///     key: "This",
+///     data: "That"
+///   };
+///
+///   let newsys = create_system(&thingy);
+///   println!("{:?}", newsys)
+///
+/// }
+/// ```
 pub fn create_system(content: &NewSystem) -> System {
     use schema::system;
 
@@ -285,6 +426,29 @@ pub fn create_system(content: &NewSystem) -> System {
         .expect("Error saving new link")
 }
 
+/// Update an existing system
+///
+/// ```
+/// use nautilus::*;
+/// use nautilus::models::{System};
+///
+/// // Note the next 3 lines are just needed to pass the doctest or if your are manually setting time
+/// extern crate chrono;
+/// use chrono::{NaiveDate, NaiveDateTime};
+/// use chrono::format::ParseError;
+///
+/// fn update_some_system() {
+///   let thingy = System {
+///     key: String::from("routes"),
+///     data: String::from("/post/"),
+///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///   };
+///
+///   let upsys = update_system(&thingy);
+///   println!("{:?}", upsys);
+///
+/// }
+/// ```
 pub fn update_system(content: &System) -> QueryResult<usize> {
     use schema::system;
     let connection = establish_connection();
@@ -292,6 +456,15 @@ pub fn update_system(content: &System) -> QueryResult<usize> {
     diesel::update(system::table).set(content).execute(&connection)
 }
 
+/// Delete a link by link id
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn delete_a_system() {
+///   delete_system("routes")
+/// }
+/// ```
 pub fn delete_system(system_key: &str) {
     use schema::system::dsl::*;
     let connection = establish_connection();
@@ -301,16 +474,7 @@ pub fn delete_system(system_key: &str) {
         .expect("Error deleting system");
 }
 
-pub fn delete_link(link_id: i32) {
-    use schema::links::dsl::*;
-
-    let connection = establish_connection();
-
-    diesel::delete(links.filter(id.eq(link_id)))
-        .execute(&connection)
-        .expect("Error deleting link");
-}
-
+/// Not used yet
 pub fn publish_link(link_id: i32) -> Link {
     use schema::links::dsl::{links, published};
 
