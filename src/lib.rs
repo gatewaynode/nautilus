@@ -141,6 +141,30 @@ pub fn read_all_posts() -> Vec<Post> {
         .expect("Error loading posts")
 }
 
+/// Read a limited number of posts into a Vec that can be iterated through
+///
+/// ```
+/// use nautilus::*;
+///
+/// fn read_all_the_posts() {
+///   let all_posts = read_all_posts();
+///   for post in all_posts {
+///     println!("{}", post.title);
+///   }
+/// }
+/// ```
+pub fn read_some_posts(limit_value: i64) -> Vec<Post> {
+    use schema::posts::dsl::*;
+
+    let connection = establish_connection();
+
+    posts
+        .order(id.desc())
+        .limit(limit_value)
+        .load::<Post>(&connection)
+        .expect("Error loading posts")
+}
+
 
 /// Read all the posts with a given tag pattern up to the given limit.
 ///
