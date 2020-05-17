@@ -12,24 +12,20 @@ extern crate dotenv;
 extern crate subprocess;
 extern crate tempfile;
 extern crate diesel;
+extern crate dialoguer;
 
 // use tempfile::NamedTempFile;
 use std::fs;
 use nautilus::*;
 use std::{thread, time};
 use std::io::prelude::*;
-// use std::process::exit;
 use self::models::{Post, NewPost, Link, NewLink, System, NewSystem};
 use prettytable::{Table};
 use serde_json::json;
-// use rustyline::error::ReadlineError;
-// use rustyline::Editor;
 use simple_prompts::{edit_prompt, prompt};
 use vim_edit::{vim_create, vim_edit};
+use dialoguer::{theme::ColorfulTheme, Select};
 
-
-// @TODO Edit should take field types as arguments or open interactive choice of fields to edit
-// @TODO Default mode should be interactive if no args or subcommands are received
 // @TODO Need the import function to handle insert new as well as update existing
 // @TODO Navigation content type (maybe just use links tagged nav????)
 
@@ -56,13 +52,6 @@ use vim_edit::{vim_create, vim_edit};
 struct State {
     verbose: bool,
     debug: bool,
-    edit_title: bool,
-    edit_body: bool,
-    edit_tags: bool,
-    edit_summary: bool,
-    edit_text: bool,
-    edit_url: bool,
-    edit_all: bool,
 }
 
 impl State {
@@ -70,13 +59,6 @@ impl State {
         State {
             verbose: false,
             debug: false,
-            edit_title: false,
-            edit_body: false,
-            edit_tags: false,
-            edit_summary: false,
-            edit_text: false,
-            edit_url: false,
-            edit_all: false,
         }
     }
 }
@@ -99,86 +81,27 @@ fn main() {
     }
 
     match matches.subcommand() {
-        ("list", Some(_clone_matches)) => {
-            list_posts(state)
+        ("create", Some(_clone_matches)) => {
+            create_content(state)
         }
-        ("slink", Some(_clone_matches)) => {
-            show_links(state)
+        ("read", Some(_clone_matches)) => {
+            read_content()
         }
-        ("show", Some(_clone_matches)) => {
-            // UGLY get's the subcommand arg, unwraps it, parses it as i32, unwraps that or on fail gives it a value of 1
-            // Rinse, repeat, soak eyes in bleach
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            show_post(state, this_post)
+        ("edit", Some(_clone_matches)) => {
+            edit_content(state)
         }
-        ("post", Some(_clone_matches)) => {
-            write_post(state)
+        ("delete", Some(_clone_matches)) => {
+            delete_content()
         }
-        ("epost", Some(_clone_matches)) => {
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            if _clone_matches.is_present("title") {
-                state.edit_title = true;
-            }
-            if _clone_matches.is_present("body") {
-                state.edit_body = true;
-            }
-            if _clone_matches.is_present("tags") {
-                state.edit_tags = true;
-            }
-            if _clone_matches.is_present("summary") {
-                state.edit_summary = true;
-            }
-            if _clone_matches.is_present("all") {
-                state.edit_all = true;
-            }
-            edit_post(state, this_post)
-        }
-        ("depost", Some(_clone_matches)) => {
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
-            delete_a_post(state, this_post)
-        }
-        ("link", Some(_clone_matches)) => {
-            write_link(state)
-        }
-        ("elink", Some(_clone_matches)) => {
-            let this_link = _clone_matches.value_of("link_id").unwrap().parse::<i32>().unwrap_or(0);
-            if _clone_matches.is_present("title") {
-                state.edit_title = true;
-            }
-            if _clone_matches.is_present("body") {
-                state.edit_body = true;
-            }
-            if _clone_matches.is_present("tags") {
-                state.edit_tags = true;
-            }
-            if _clone_matches.is_present("summary") {
-                state.edit_summary = true;
-            }
-            if _clone_matches.is_present("all") {
-                state.edit_all = true;
-            }
-            edit_link(state, this_link)
-        }
-        ("delink", Some(_clone_matches)) => {
-            let link_id = _clone_matches.value_of("link_id").unwrap().parse::<i32>().unwrap_or(0);
-            delete_a_link(state, link_id)
-        }
-        ("ssystem", Some(_clone_matches)) => {
-            show_system(state)
-        }
-        ("system", Some(_clone_matches)) => {
-            write_system(state)
-        }
-        ("esystem", Some(_clone_matches)) => {
-            let system_key = String::from(_clone_matches.value_of("system_key").unwrap());
-            edit_system(state, system_key)
-        }
-        ("dsystem", Some(_clone_matches)) => {
-            let system_key = String::from(_clone_matches.value_of("system_key").unwrap());
-            delete_a_system(state, system_key)
+        ("testing", Some(_clone_matches)) => {
+            let output = prompt("promted$: ");
+            println!("output = {:?}", output)
         }
         ("export", Some(_clone_matches)) => {
-            let this_post = _clone_matches.value_of("post_id").unwrap().parse::<i32>().unwrap_or(0);
+            let this_post = _clone_matches.value_of("post_id")
+                .unwrap()
+                .parse::<i32>()
+                .unwrap_or(0);
             let export_filename = _clone_matches.value_of("export_filename").unwrap();
             export_post(state, this_post, export_filename)
         }
@@ -186,23 +109,213 @@ fn main() {
             let import_filename = _clone_matches.value_of("import_filename").unwrap();
             import_post(state, import_filename)
         }
-        ("testing", Some(_clone_matches)) => {
-            let output = prompt("promted$: ");
-            println!("output = {:?}", output)
-        }
         ("", None) => println!("No subcommand used"), // @TODO add a default REPL action here
         _ => unreachable!(),
     }
-
 }
 
+// Interactive Functions
+fn create_content(state: State) {
+    let verbose = state.verbose; // Implicit copy
+
+    let selections = &[
+        "Article",
+        "Link",
+        "System",
+    ];
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choose the type of content to create: ")
+        .default(0)
+        .items(&selections[..])
+        .interact()
+        .unwrap();
+
+    match selections[selection] {
+        "Article" => {
+            write_post(state)
+        }
+        "Link" => {
+            write_link(state)
+        }
+        "System" => {
+            write_system(state)
+        }
+        _ => println!("How did you manage no selection?  ERROR")
+    }
+    if verbose {
+        println!("Creating : {}", selections[selection]);
+    }
+}
+
+fn read_content() {
+    let selections = &[
+        "Article",
+        "Link",
+        "System",
+    ];
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choose the type of content to create: ")
+        .default(0)
+        .items(&selections[..])
+        .interact()
+        .unwrap();
+
+    match selections[selection] {
+        "Article" => {
+            let post_id = select_article();
+            if post_id != 0 {
+                show_post(post_id)
+            }
+            else {
+                println!("Nothing entered, nothing to show.")
+            }
+        }
+        "Link" => {
+            let link_id = select_link();
+            if link_id != 0 {
+                show_link(link_id)
+            }
+            else {
+                println!("Nothing entered, nothing to show.")
+            }
+        }
+        "System" => {
+            let key: String = select_system();
+            if &key == "" {
+                println!("Nothing entered, nothing to do.")
+            }
+            else {
+                show_system(key)
+            }
+        }
+        _ => println!("How did you manage no selection?  ERROR")
+    }
+}
+
+fn edit_content(state: State) {
+    let verbose = state.verbose; // Implicit copy
+
+    let selections = &[
+        "Article",
+        "Link",
+        "System",
+    ];
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choose the type of content to create: ")
+        .default(0)
+        .items(&selections[..])
+        .interact()
+        .unwrap();
+
+    match selections[selection] {
+        "Article" => {
+            let article_to_edit: i32 = select_article();
+            if article_to_edit != 0 {
+                edit_post(state, article_to_edit)
+            }
+            else {
+                println!("Nothing entered to edit, nothing to do.")
+            }
+        }
+        "Link" => {
+            let link_to_edit: i32 = select_link();
+            if link_to_edit != 0 {
+                edit_link(state, link_to_edit)
+            }
+            else {
+                println!("Nothing entered to edit, nothing to do.")
+            }
+        }
+        "System" => {
+            let key_to_edit: String = select_system();
+            if &key_to_edit == "" {
+                println!("Nothing entered to edit, nothing to do.")
+            }
+            else {
+                edit_system(state, key_to_edit)
+            }
+        }
+        _ => println!("How did you manage no selection?  ERROR")
+    }
+    if verbose {
+        println!("Creating : {}", selections[selection]);
+    }
+}
+
+fn delete_content() {
+    let selections = &[
+        "Article",
+        "Link",
+        "System",
+    ];
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choose the type of content to create: ")
+        .default(0)
+        .items(&selections[..])
+        .interact()
+        .unwrap();
+
+    match selections[selection] {
+        "Article" => {
+            let post_id = select_article();
+            if post_id != 0 {
+                prompt("Are you sure?");
+                delete_post(post_id)
+            }
+            else {
+                println!("Nothing entered, nothing to delete.")
+            }
+        }
+        "Link" => {
+            let link_id = select_link();
+            if link_id != 0 {
+                prompt("Are you sure?");
+                delete_link(link_id)
+            }
+            else {
+                println!("Nothing entered, nothing to delete.")
+            }
+        }
+        "System" => {
+            let key: String = select_system();
+            if &key == "" {
+                println!("Nothing entered, nothing to delete.")
+            }
+            else {
+                prompt("Are you sure?");
+                delete_system(&key)
+            }
+        }
+        _ => println!("How did you manage no selection?  ERROR")
+    }
+}
+
+fn select_article() -> i32 {
+    list_posts();
+    prompt("Enter an ID number to edit: ")
+        .parse::<i32>()
+        .unwrap_or(0)
+}
+
+fn select_link() -> i32 {
+    list_links();
+    prompt("Enter an ID number to edit: ")
+        .parse::<i32>()
+        .unwrap_or(0)
+}
+
+fn select_system() -> String {
+    list_system();
+    prompt("Enter a key to edit: ")
+}
 
 // <-- Primary functions -->
-fn list_posts(state: State) {
+fn list_posts() {
     let all_posts: Vec<Post> = read_all_posts();
-    if state.verbose {
-        println!("Displaying {} posts:", all_posts.len());
-    }
 
     let mut table = Table::new();
     table.add_row(row!["ID", "TITLE", "SUMMARY", "TAGS", "TIME"]);
@@ -212,11 +325,8 @@ fn list_posts(state: State) {
     table.printstd();
 }
 
-fn show_links(state: State) {
+fn list_links() {
     let all_links: Vec<Link> = read_all_links();
-    if state.verbose {
-        println!("Displaying {} links:", all_links.len());
-    }
 
     let mut table = Table::new();
     table.add_row(row!["ID", "TEXT", "URL", "TITLE", "TIME"]);
@@ -255,17 +365,10 @@ fn write_post(state: State) {
 }
 
 
-fn edit_post(mut state: State, post_id: i32) {
+fn edit_post(state: State, post_id: i32) {
     if state.verbose {
         println!("Editing post {}", post_id);
     }
-    if !state.edit_title && !state.edit_body && !state.edit_tags && !state.edit_summary && !state.edit_all {
-        if state.verbose {
-            println!("No fields selected, assuming body...");
-        }
-        state.edit_body = true;
-    }
-
 
     let current_content: Post = read_post(post_id);
 
@@ -274,18 +377,10 @@ fn edit_post(mut state: State, post_id: i32) {
     let mut raw_tags: String = current_content.tags.clone();
     let mut raw_summary: String = current_content.summary.clone();
 
-    if state.edit_title || state.edit_all {
-        raw_title = edit_prompt("Edit title: ", &raw_title);
-    }
-    if state.edit_body || state.edit_all {
-        raw_body = vim_edit(raw_body);
-    }
-    if state.edit_tags || state.edit_all {
-        raw_tags = edit_prompt("Edit tags: ", &raw_tags);
-    }
-    if state.edit_summary || state.edit_all {
-        raw_summary = edit_prompt("Edit summary: ", &raw_summary);
-    }
+    raw_title = edit_prompt("Edit title: ", &raw_title);
+    raw_body = vim_edit(raw_body);
+    raw_tags = edit_prompt("Edit tags: ", &raw_tags);
+    raw_summary = edit_prompt("Edit summary: ", &raw_summary);
 
     let edited_content = Post {
         title: raw_title,
@@ -303,24 +398,19 @@ fn edit_post(mut state: State, post_id: i32) {
 
 }
 
-fn show_post(state: State, post_id: i32) {
-    if state.verbose {
-        println!("Showing post {}", post_id);
-    }
-
+fn show_post(post_id: i32) {
     let output: Post = read_post(post_id);
-
-    let mut table = Table::new();
-    table.add_row(row!["ID", "TITLE", "BODY", "PUBLISHED"]);
-    table.add_row(row![output.id, output.title, output.body, output.published]);
-    table.printstd();
+    println!("{:#?}", output)
 }
 
-fn delete_a_post(state: State, post_id: i32) {
-    if state.verbose {
-        println!("Deleting post {}", post_id);
-    }
-    delete_post(post_id)
+fn show_link(link_id: i32) {
+    let output: Link = read_link(link_id);
+    println!("{:#?}", output)
+}
+
+fn show_system(key: String) {
+    let output: System = read_system(key);
+    println!("{:#?}", output)
 }
 
 fn write_link(state: State) {
@@ -346,15 +436,9 @@ fn write_link(state: State) {
 
 }
 
-fn edit_link(mut state: State, link_id: i32) {
+fn edit_link(state: State, link_id: i32) {
     if state.verbose {
         println!("Editing link {}", link_id);
-    }
-    if !state.edit_text && !state.edit_title && !state.edit_url && !state.edit_tags && !state.edit_all{
-        if state.verbose {
-            println!("No fields selected, assuming url...");
-        }
-        state.edit_url = true;
     }
 
     let current_content: Link = read_link(link_id);
@@ -364,18 +448,10 @@ fn edit_link(mut state: State, link_id: i32) {
     let mut raw_url: String = current_content.url.clone();
     let mut raw_tags: String = current_content.tags.clone();
 
-    if state.edit_text || state.edit_all {
-        raw_text = edit_prompt("Edit text: ", &raw_text);
-    }
-    if state.edit_title || state.edit_all {
-        raw_title = edit_prompt("Edit title: ", &raw_title);
-    }
-    if state.edit_url || state.edit_all {
-        raw_url = edit_prompt("Edit url: ", &raw_url);
-    }
-    if state.edit_tags || state.edit_all{
-        raw_tags = edit_prompt("Edit tags: ", &raw_tags);
-    }
+    raw_text = edit_prompt("Edit text: ", &raw_text);
+    raw_title = edit_prompt("Edit title: ", &raw_title);
+    raw_url = edit_prompt("Edit url: ", &raw_url);
+    raw_tags = edit_prompt("Edit tags: ", &raw_tags);
 
     let edited_content = Link {
         text: raw_text,
@@ -392,18 +468,8 @@ fn edit_link(mut state: State, link_id: i32) {
     }
 }
 
-fn delete_a_link(state: State, link_id: i32) {
-    if state.verbose {
-        println!("Deleting link {}", link_id);
-    }
-    delete_link(link_id)
-}
-
-fn show_system(state: State) {
+fn list_system() {
     let all_system: Vec<System> = read_all_system();
-    if state.verbose {
-        println!("Displaying {} system entries:", all_system.len());
-    }
 
     let mut table = Table::new();
     table.add_row(row!["KEY", "DATA", "TIME"]);
@@ -439,13 +505,6 @@ fn edit_system(state: State, system_key: String) {
     if state.verbose {
         println!("Updated system: {:?}", &updated_system_result);
     }
-}
-
-fn delete_a_system(state: State, key: String) {
-    if state.verbose {
-        println!("Deleting system entry: {}", &key);
-    }
-    delete_system(&key)
 }
 
 fn export_post(state: State, this_post: i32, export_filename: &str) {

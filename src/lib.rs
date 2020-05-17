@@ -136,7 +136,7 @@ pub fn read_all_posts() -> Vec<Post> {
     let connection = establish_connection();
 
     posts
-        .order(id.desc())
+        .order(id.asc())
         .load::<Post>(&connection)
         .expect("Error loading posts")
 }
@@ -264,7 +264,7 @@ pub fn read_all_links() -> Vec<Link> {
     let connection = establish_connection();
 
     links
-        .order(id.desc())
+        .order(id.asc())
         .load::<Link>(&connection)
         .expect("Error loading links")
 }
