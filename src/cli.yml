@@ -24,140 +24,6 @@ subcommands:
     #         - debug:
     #             short: d
     #             help: print debug information
-    - list:
-        about: list post contents
-        version: "1.0"
-        author: anon
-    - show:
-        about: show a blog post by id (sub args)
-        version: "1.0"
-        author: anon
-        args:
-            - post_id:
-                help: The post id number (position 1)
-                required: true
-    - post:
-        about: create a piece of post content
-        version: "1.0"
-        author: anon
-    - epost:
-        about: edit a post by post_id and field arg
-        version: "1.0"
-        author: anon
-        args:
-            - post_id:
-                help: The post id number (position 1)
-                index: 1
-                required: true
-            - title:
-                short: t
-                long: title
-                help: Edit the title field
-                takes_value: false
-            - body:
-                short: b
-                long: body
-                help: Edit the body field
-                takes_value: false
-            - tags:
-                short: a
-                long: tags
-                help: Edit the tags field
-                takes_value: false
-            - summary:
-                short: s
-                long: summary
-                help: Edit the summary field
-                takes_value: false
-            - all:
-                long: all
-                help: Edit all the fields
-                takes_value: false
-    - depost:
-        about: delete a post by post_id number (sub args)
-        version: "1.0"
-        author: anon
-        args:
-            - post_id:
-                help: The post id number (position 1)
-                required: true
-    - link:
-        about: create a piece of link content
-        version: "1.0"
-        author: anon
-    - elink:
-        about: edit a link by link_id and field arg
-        version: "1.0"
-        author: anon
-        args:
-            - link_id:
-                help: The link id number (position 1)
-                index: 1
-                required: true
-            - text:
-                short: t
-                long: text
-                help: Edit the display text field
-                takes_value: false
-            - title:
-                short: i
-                long: title
-                help: Edit the hover title field
-                takes_value: false
-            - url:
-                short: u
-                long: url
-                help: Edit the href URL field
-                takes_value: true
-            - tags:
-                short: a
-                long: tags
-                help: Edit the tags field
-                takes_value: false
-            - all:
-                long: all
-                help: Edit all the fields
-                takes_value: false
-    - delink:
-        about: delete a link by id (sub args)
-        version: "1.0"
-        author: anon
-        args:
-            - link_id:
-                help: The link id number (position 1)
-                required: true
-    - slink:
-        about: Show all links
-        version: "1.0"
-        author: anon
-        takes_value: false
-    - ssystem:
-        about: Show system entry data
-        version: "1.0"
-        author: anon
-    - system:
-        about: Enter a system value
-        version: "1.0"
-        author: anon
-        takes_value: false
-    - esystem:
-        about: Edit a system value by key
-        version: "1.0"
-        author: anon
-        args:
-            system_key:
-                help: The key for the system data
-                required: true
-                index: 1
-    - dsystem:
-        about: Delete a system value by key
-        version: "1.0"
-        author: anon
-        args:
-            - system_key:
-                help: The key for the system data
-                required: true
-                index: 1
     - export:
         about: export a post by post_id to a file (sub args)
         version: "1.0"
@@ -181,5 +47,21 @@ subcommands:
                 required: true
     - testing:
         about: Don't use this, it's for prototyping new functions
+        version: "1.0"
+        author: anon
+    - read:
+        about: Read a piece of content
+        version: "1.0"
+        author: anon
+    - create:
+        about: The content creation workflow
+        version: "1.0"
+        author: anon
+    - edit:
+        about: Edit existing content
+        version: "1.0"
+        author: anon
+    - delete:
+        about: Delete existing content
         version: "1.0"
         author: anon
