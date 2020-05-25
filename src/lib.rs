@@ -10,10 +10,17 @@ extern crate serde_derive;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
+extern crate dirs;
+use std::path::Path;
 use std::env;
 use self::models::{Post, Link, NewPost, NewLink, System, NewSystem};
 
-/// Create a database connection.  Does not use pools, so this is not suitable for prod connections.
+/// Create a database connection.
+///
+/// Order of operations here is: 1, environment variables first; 2, local .env file from the
+/// execution directory; 3, a .env file in ~/config/N4/.env
+///
+/// Does not use pools, so this is not suitable for prod connections.
 ///
 /// ```
 /// use nautilus::*;
@@ -23,10 +30,27 @@ use self::models::{Post, Link, NewPost, NewLink, System, NewSystem};
 /// }
 /// ```
 pub fn establish_connection() -> PgConnection {
-    dotenv().ok();
+    match dotenv() {
+        Ok(_) => {}
+        Err(_) => {
+            let config_dir = format!("{}/N4/.env", dirs::config_dir()
+                .unwrap()
+                .display()
+                .to_string()
+            );
+            println!("{}", config_dir);
+            match dotenv::from_path(Path::new(&config_dir)) {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("Environment variables not loaded, error.");
+                    panic!(e);
+                }
+            }
+        }
+    }
 
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+    let database_url = env::var("N4_DATABASE_URL")
+        .expect("DATABASE_URL must be set!  N4 expects a environment variable of N4_DATABASE_URL or a .dotenv file in the current dir or the local config dir of ~/.config/N4/.env");
     PgConnection::establish(&database_url)
         .expect("Error connecting to database.")
 }
