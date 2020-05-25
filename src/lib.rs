@@ -38,7 +38,7 @@ pub fn establish_connection() -> PgConnection {
                 .display()
                 .to_string()
             );
-            println!("{}", config_dir);
+            println!("{}", config_dir);  // @TODO remove this at some point in time.
             match dotenv::from_path(Path::new(&config_dir)) {
                 Ok(_) => {}
                 Err(e) => {
