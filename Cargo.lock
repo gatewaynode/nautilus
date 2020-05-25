@@ -358,6 +358,7 @@ dependencies = [
  "clap",
  "dialoguer",
  "diesel",
+ "dirs 2.0.2",
  "dotenv",
  "prettytable-rs",
  "rustyline",
