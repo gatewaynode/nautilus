@@ -42,7 +42,7 @@ pub fn establish_connection() -> PgConnection {
             match dotenv::from_path(Path::new(&config_dir)) {
                 Ok(_) => {}
                 Err(e) => {
-                    println!("Environment variables not loaded, error.");
+                    println!("Environment variables not loaded, error.   N4 expects a environment variable of N4_DATABASE_URL or a .dotenv file in the current dir or the local config dir of ~/.config/N4/.env");
                     panic!(e);
                 }
             }
