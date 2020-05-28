@@ -101,12 +101,13 @@ pub fn create_post(content: &NewPost) -> Post {
 ///   let thingy = Post {
 ///     id: 1,
 ///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
-///     published: false,
 ///     title: String::from("Somethin else"),
 ///     body: String::from("Something"),
 ///     summary: String::from("Something else"),
 ///     tags: String::from("This, That"),
-///     comment_url: String::from("https://www.google.com"),
+///     parent: String::from("{\"content_type\": \"None\", \"id\": 0}"),
+///     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///     version: 2,
 ///   };
 ///
 ///   let newpost = update_post(&thingy);
@@ -365,12 +366,14 @@ pub fn create_link(content: &NewLink) -> Link {
 /// fn update_some_post() {
 ///   let thingy = Link {
 ///     id: 1,
-///     published: false,
 ///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
 ///     text: String::from("Somethin else"),
 ///     title: String::from("Something"),
 ///     url: String::from("Something else"),
 ///     tags: String::from("This, That"),
+///     parent: String::from("{\"content_type\": \"None\", \"id\": 0}"),
+///     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///     version: 2,
 ///   };
 ///
 ///   let uplink = update_link(&thingy);
@@ -490,6 +493,8 @@ pub fn create_system(content: &NewSystem) -> System {
 ///     key: String::from("routes"),
 ///     data: String::from("/post/"),
 ///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///     version: 2,
+///     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
 ///   };
 ///
 ///   let upsys = update_system(&thingy);
