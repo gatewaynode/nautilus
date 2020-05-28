@@ -38,7 +38,7 @@ pub fn establish_connection() -> PgConnection {
                 .display()
                 .to_string()
             );
-            println!("{}", config_dir);
+            println!("{}", config_dir);  // @TODO remove this at some point in time.
             match dotenv::from_path(Path::new(&config_dir)) {
                 Ok(_) => {}
                 Err(e) => {
@@ -217,17 +217,17 @@ pub fn read_posts_by_filter_limit(filter_value: String, limit_value: i64) -> Vec
         .expect("Error loading posts")
 }
 
-/// Currently not in use, but when it is it simply sets the published field to ``true``
-pub fn publish_post(post_id: i32) -> Post {
-    use schema::posts::dsl::{posts, published};
-
-    let connection = establish_connection();
-
-    diesel::update(posts.find(post_id))
-        .set(published.eq(true))
-        .get_result::<Post>(&connection)
-        .expect("Unable to find post number")
-}
+// Currently not in use, but when it is it simply sets the published field to ``true``
+// pub fn publish_post(post_id: i32) -> Post {
+//     use schema::posts::dsl::{posts, published};
+//
+//     let connection = establish_connection();
+//
+//     diesel::update(posts.find(post_id))
+//         .set(published.eq(true))
+//         .get_result::<Post>(&connection)
+//         .expect("Unable to find post number")
+// }
 
 /// Delete a post by post id
 ///
@@ -522,14 +522,14 @@ pub fn delete_system(system_key: &str) {
         .expect("Error deleting system");
 }
 
-/// Not used yet
-pub fn publish_link(link_id: i32) -> Link {
-    use schema::links::dsl::{links, published};
-
-    let connection = establish_connection();
-
-    diesel::update(links.find(link_id))
-        .set(published.eq(true))
-        .get_result::<Link>(&connection)
-        .expect("Unable to find post number")
-}
+// Not used yet
+// pub fn publish_link(link_id: i32) -> Link {
+//     use schema::links::dsl::{links, published};
+//
+//     let connection = establish_connection();
+//
+//     diesel::update(links.find(link_id))
+//         .set(published.eq(true))
+//         .get_result::<Link>(&connection)
+//         .expect("Unable to find post number")
+// }
