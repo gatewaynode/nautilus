@@ -13,7 +13,25 @@ use dotenv::dotenv;
 extern crate dirs;
 use std::path::Path;
 use std::env;
-use self::models::{Post, Link, NewPost, NewLink, System, NewSystem};
+use self::models::{
+    Node,
+    Post,
+    Link,
+    System,
+    NewNode,
+    NewPost,
+    NewLink,
+    NewSystem,
+    NodeRevision,
+    PostRevision,
+    LinkRevision,
+    SystemRevision,
+    Content,
+    Content::PostContent,
+    Content::LinkContent,
+};
+
+// @TODO Add node abstraction layer
 
 /// Create a database connection.
 ///
@@ -53,6 +71,74 @@ pub fn establish_connection() -> PgConnection {
         .expect("DATABASE_URL must be set!  N4 expects a environment variable of N4_DATABASE_URL or a .dotenv file in the current dir or the local config dir of ~/.config/N4/.env");
     PgConnection::establish(&database_url)
         .expect("Error connecting to database.")
+}
+
+/// Create a node
+///
+/// This is a private function which creates a node prior to content being saved.  The content is
+/// saved with this node identity as the parent and then an association function finalizes the
+/// connection.
+pub fn _create_node() -> Node {
+    use schema::nodes;
+
+    let connection = establish_connection();
+
+    let new_node = NewNode::new();
+
+    diesel::insert_into(nodes::table)
+        .values(&new_node)
+        .get_result(&connection)
+        .expect("Error creating new node")
+}
+
+/// Associate a node with content
+///
+/// This function takes a node and updates it with the relationship to a piece of content(child and
+/// child_content_type).  This is saved and then the hashes are calculated, which are saved as the
+/// final fully associated node.
+pub fn _save_node_content(node: Node, content: Content) {
+    match content {
+        PostContent(_post) => {
+            if node.child >= 1 { // Update the content
+                println!("Update not supported yet")
+                // Create revision
+                // Create content row with updated version
+                // Create node revision
+                // Update node with new hashes
+            } else { // Create new content row
+                let _content = Post {
+                    parent: node.id,
+                    .._post
+                };
+                println!("{:#?}", _content);
+                let _saved_content = create_node_article(&_content);
+                // Update node with child id and inital hashes
+            }
+
+        }, //println!("Post content type passed"),
+        LinkContent(_link) => println!("Link content type passed"),
+    }
+}
+
+pub fn _update_new_node_article(node: Node, article: Post) -> Node {
+    let connection = establish_connection();
+
+    let _node = Node {
+        child: article.id,
+        ..node
+    };
+    diesel::update(&_node).set(&_node).get_result(&connection).unwrap()
+}
+
+pub fn create_node_article(content: &Post) -> Post {
+    use schema::posts;
+
+    let connection = establish_connection();
+
+    diesel::insert_into(posts::table)
+        .values(content)
+        .get_result(&connection)
+        .expect("Error saving new Article to DB")
 }
 
 /// Enter a NewPost struct into the database (tracks closely to Post without the auto fields).
