@@ -2,13 +2,13 @@ table! {
     link_revisions (id, version) {
         id -> Int4,
         version -> Int4,
-        parent -> Varchar,
         text -> Varchar,
         title -> Varchar,
         url -> Varchar,
         tags -> Varchar,
         time -> Timestamptz,
         updated -> Timestamptz,
+        parent -> Int4,
     }
 }
 
@@ -20,9 +20,9 @@ table! {
         url -> Varchar,
         tags -> Varchar,
         time -> Timestamptz,
-        parent -> Varchar,
         version -> Int4,
         updated -> Timestamptz,
+        parent -> Int4,
     }
 }
 
@@ -30,7 +30,6 @@ table! {
     node_revisions (id, version) {
         id -> Int4,
         version -> Int4,
-        child -> Varchar,
         _child_hash -> Varchar,
         _self_hash -> Varchar,
         _hash_chain -> Varchar,
@@ -43,6 +42,8 @@ table! {
         node_last -> Text,
         time -> Timestamptz,
         updated -> Timestamptz,
+        child -> Int4,
+        child_content_type -> Varchar,
     }
 }
 
@@ -50,7 +51,6 @@ table! {
     nodes (id) {
         id -> Int4,
         version -> Int4,
-        child -> Varchar,
         _child_hash -> Varchar,
         _self_hash -> Varchar,
         _hash_chain -> Varchar,
@@ -63,6 +63,8 @@ table! {
         node_last -> Text,
         time -> Timestamptz,
         updated -> Timestamptz,
+        child -> Int4,
+        child_content_type -> Varchar,
     }
 }
 
@@ -70,13 +72,13 @@ table! {
     post_revisions (id, version) {
         id -> Int4,
         version -> Int4,
-        parent -> Varchar,
         title -> Varchar,
         body -> Text,
         summary -> Varchar,
         tags -> Varchar,
         time -> Timestamptz,
         updated -> Timestamptz,
+        parent -> Int4,
     }
 }
 
@@ -88,9 +90,9 @@ table! {
         time -> Timestamptz,
         tags -> Varchar,
         summary -> Varchar,
-        parent -> Varchar,
         version -> Int4,
         updated -> Timestamptz,
+        parent -> Int4,
     }
 }
 

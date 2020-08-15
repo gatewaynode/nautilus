@@ -11,22 +11,22 @@ pub struct Post {
     pub time: chrono::NaiveDateTime,
     pub tags: String,
     pub summary: String,
-    pub parent: String,
     pub version: i32,
     pub updated: chrono::NaiveDateTime,
+    pub parent: i32,
 }
 
 #[derive(Queryable, Identifiable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]
 pub struct PostRevision {
     pub id: i32,
     pub version: i32,
-    pub parent: String,
     pub title: String,
     pub body: String,
     pub time: chrono::NaiveDateTime,
     pub updated: chrono::NaiveDateTime,
     pub tags: String,
     pub summary: String,
+    pub parent: i32,
 }
 
 #[derive(Insertable)]
@@ -43,7 +43,6 @@ pub struct NewPost<'a> {
 pub struct Node {
     pub id: i32,
     pub version: i32,
-    pub child: String,
     pub _child_hash: String,
     pub _self_hash: String,
     pub _hash_chain: String,
@@ -56,13 +55,30 @@ pub struct Node {
     pub node_last: String,
     pub time: chrono::NaiveDateTime,
     pub updated: chrono::NaiveDateTime,
+    pub child: i32,
+    pub child_content_type: String,
+}
+
+#[derive(Insertable)]
+#[table_name="nodes"]
+pub struct NewNode<'a> {
+    pub workflow: &'a str,
+    pub permissions: &'a str,
+}
+
+impl NewNode<'_> {
+    pub fn new() -> NewNode<'static> {
+        NewNode {
+            workflow: "constructing",
+            permissions: "pre",
+        }
+    }
 }
 
 #[derive(Queryable, Identifiable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]
 pub struct NodeRevision {
     pub id: i32,
     pub version: i32,
-    pub child: String,
     pub _child_hash: String,
     pub _self_hash: String,
     pub _hash_chain: String,
@@ -75,6 +91,8 @@ pub struct NodeRevision {
     pub node_last: String,
     pub time: chrono::NaiveDateTime,
     pub updated: chrono::NaiveDateTime,
+    pub child: i32,
+    pub child_content_type: String,
 }
 
 #[derive(Queryable, Identifiable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]
@@ -85,22 +103,22 @@ pub struct Link {
     pub url: String,
     pub tags: String,
     pub time: chrono::NaiveDateTime,
-    pub parent: String,
     pub version: i32,
     pub updated: chrono::NaiveDateTime,
+    pub parent: i32,
 }
 
 #[derive(Queryable, Identifiable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]
 pub struct LinkRevision {
     pub id: i32,
     pub version: i32,
-    pub parent: String,
     pub text: String,
     pub title: String,
     pub url: String,
     pub tags: String,
     pub time: chrono::NaiveDateTime,
     pub updated: chrono::NaiveDateTime,
+    pub parent: i32,
 }
 
 #[derive(Insertable)]
@@ -139,22 +157,16 @@ pub struct NewSystem<'a> {
     pub data: &'a str,
 }
 
-// // Node Notes
-// #[derive(Queryable, Insertable, AsChangeset, Serialize, Deserialize, Debug)]
-// pub struct Node {
-//     pub id: i32,
-//     pub version: i32, // Version
-//     pub child: String, // Node content, one to one.  Need to store a serialized value not an int
-//     pub _child_hash: String, // A hash of the child row //Blake2b
-//     pub _self_hash: String,  // A hash of the node row without other hashes //Blake2b
-//     pub _hash_chain: String, // A hash of the other two hashes and the last revision _hash_chain if it exists //Blake2b
-//     pub labels: String, // Metadata
-//     pub workflow: String,
-//     pub permissions: String,
-//     pub paths_to: String,  // Serialized Vec?
-//     pub paths_from: String,
-//     pub node_next: i32,
-//     pub node_last: i32,
-//     pub time: chrono::NaiveDateTime,
-//     pub updated: chrono::NiaveDateTime,
-// }
+// Trying to place the relevant enum here
+#[derive(Debug)]
+pub enum Content {
+    PostContent(Post),
+    LinkContent(Link),
+}
+
+// A data structure representing a full node and content
+#[derive(Debug)]
+pub struct FullNode {
+    node: Node,
+    content: Content,
+}

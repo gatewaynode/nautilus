@@ -13,7 +13,25 @@ use dotenv::dotenv;
 extern crate dirs;
 use std::path::Path;
 use std::env;
-use self::models::{Post, Link, NewPost, NewLink, System, NewSystem};
+use self::models::{
+    Node,
+    Post,
+    Link,
+    System,
+    NewNode,
+    NewPost,
+    NewLink,
+    NewSystem,
+    NodeRevision,
+    PostRevision,
+    LinkRevision,
+    SystemRevision,
+    Content,
+    Content::PostContent,
+    Content::LinkContent,
+};
+
+// @TODO Add node abstraction layer
 
 /// Create a database connection.
 ///
@@ -54,6 +72,81 @@ pub fn establish_connection() -> PgConnection {
     PgConnection::establish(&database_url)
         .expect("Error connecting to database.")
 }
+
+/// Create a node
+///
+/// This is a private function which creates a node prior to content being saved.  The content is
+/// saved with this node identity as the parent and then an association function finalizes the
+/// connection.
+pub fn _create_node() -> Node {
+    use schema::nodes;
+
+    let connection = establish_connection();
+
+    let new_node = NewNode::new();
+
+    diesel::insert_into(nodes::table)
+        .values(&new_node)
+        .get_result(&connection)
+        .expect("Error creating new node")
+}
+
+pub fn _update_new_node_article(node: Node, article: &Post) -> Node {
+    let connection = establish_connection();
+
+    let _node = Node {
+        child: article.id,
+        ..node
+    };
+    diesel::update(&_node).set(&_node).get_result(&connection).unwrap()
+}
+
+pub fn create_node_article(content: &Post) -> Post {
+    use schema::posts;
+
+    let connection = establish_connection();
+
+    diesel::insert_into(posts::table)
+        .values(content)
+        .get_result(&connection)
+        .expect("Error saving new Article to DB")
+}
+
+/// Associate a node with content
+///
+/// This function takes a node and updates it with the relationship to a piece of content(child and
+/// child_content_type).  This is saved and then the hashes are calculated, which are saved as the
+/// final fully associated node.
+pub fn _save_node_content(node: Node, content: Content) {
+    match content {
+        PostContent(_post) => {
+            if node.child >= 1 {
+                // Update the content
+                println!("Update not supported yet")
+                // Create revision
+                // Create content row with updated version
+                // Create node revision
+                // @FutureState Create new node hashes
+            } else {
+                // Create new node
+                // Create new content row with node.id as parent value
+                let _content = Post {
+                    parent: node.id,
+                    .._post
+                };
+                // println!("{:#?}", _content);
+                let _saved_content = create_node_article(&_content);
+                // Update node with child id as content.id
+                let _updated_node = _update_new_node_article(node, &_saved_content);
+                // @FutureState Create node hashes
+                // @FutureState Update node
+            }
+
+        }, //println!("Post content type passed"),
+        LinkContent(_link) => println!("Link content type passed"),
+    }
+}
+
 
 /// Enter a NewPost struct into the database (tracks closely to Post without the auto fields).
 ///
@@ -101,12 +194,13 @@ pub fn create_post(content: &NewPost) -> Post {
 ///   let thingy = Post {
 ///     id: 1,
 ///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
-///     published: false,
 ///     title: String::from("Somethin else"),
 ///     body: String::from("Something"),
 ///     summary: String::from("Something else"),
 ///     tags: String::from("This, That"),
-///     comment_url: String::from("https://www.google.com"),
+///     parent: 1,
+///     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///     version: 2,
 ///   };
 ///
 ///   let newpost = update_post(&thingy);
@@ -365,12 +459,14 @@ pub fn create_link(content: &NewLink) -> Link {
 /// fn update_some_post() {
 ///   let thingy = Link {
 ///     id: 1,
-///     published: false,
 ///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
 ///     text: String::from("Somethin else"),
 ///     title: String::from("Something"),
 ///     url: String::from("Something else"),
 ///     tags: String::from("This, That"),
+///     parent: 1,
+///     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///     version: 2,
 ///   };
 ///
 ///   let uplink = update_link(&thingy);
@@ -490,6 +586,8 @@ pub fn create_system(content: &NewSystem) -> System {
 ///     key: String::from("routes"),
 ///     data: String::from("/post/"),
 ///     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+///     version: 2,
+///     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
 ///   };
 ///
 ///   let upsys = update_system(&thingy);
