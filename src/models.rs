@@ -163,3 +163,10 @@ pub enum Content {
     PostContent(Post),
     LinkContent(Link),
 }
+
+// A data structure representing a full node and content
+#[derive(Debug)]
+pub struct FullNode {
+    node: Node,
+    content: Content,
+}

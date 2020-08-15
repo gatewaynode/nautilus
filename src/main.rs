@@ -121,20 +121,20 @@ fn main() {
             let node = _create_node();
             let content = Content::PostContent(this_post);
             _save_node_content(node, content);
-            let this_link = Link {
-                id: 999,
-                text: String::from("Some link"),
-                title: String::from("Some title"),
-                url: String::from("http"),
-                tags: String::from("Testing"),
-                time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
-                version: 1,
-                updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
-                parent: 1,
-            };
-            let node = _create_node();
-            let other_content = Content::LinkContent(this_link);
-            _save_node_content(node, other_content);
+            // let this_link = Link {
+            //     id: 999,
+            //     text: String::from("Some link"),
+            //     title: String::from("Some title"),
+            //     url: String::from("http"),
+            //     tags: String::from("Testing"),
+            //     time: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+            //     version: 1,
+            //     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
+            //     parent: 1,
+            // };
+            // let node = _create_node();
+            // let other_content = Content::LinkContent(this_link);
+            // _save_node_content(node, other_content);
         }
         ("export", Some(_clone_matches)) => {
             let this_post = _clone_matches.value_of("post_id")

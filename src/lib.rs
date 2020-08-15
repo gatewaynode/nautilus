@@ -91,36 +91,7 @@ pub fn _create_node() -> Node {
         .expect("Error creating new node")
 }
 
-/// Associate a node with content
-///
-/// This function takes a node and updates it with the relationship to a piece of content(child and
-/// child_content_type).  This is saved and then the hashes are calculated, which are saved as the
-/// final fully associated node.
-pub fn _save_node_content(node: Node, content: Content) {
-    match content {
-        PostContent(_post) => {
-            if node.child >= 1 { // Update the content
-                println!("Update not supported yet")
-                // Create revision
-                // Create content row with updated version
-                // Create node revision
-                // Update node with new hashes
-            } else { // Create new content row
-                let _content = Post {
-                    parent: node.id,
-                    .._post
-                };
-                println!("{:#?}", _content);
-                let _saved_content = create_node_article(&_content);
-                // Update node with child id and inital hashes
-            }
-
-        }, //println!("Post content type passed"),
-        LinkContent(_link) => println!("Link content type passed"),
-    }
-}
-
-pub fn _update_new_node_article(node: Node, article: Post) -> Node {
+pub fn _update_new_node_article(node: Node, article: &Post) -> Node {
     let connection = establish_connection();
 
     let _node = Node {
@@ -140,6 +111,42 @@ pub fn create_node_article(content: &Post) -> Post {
         .get_result(&connection)
         .expect("Error saving new Article to DB")
 }
+
+/// Associate a node with content
+///
+/// This function takes a node and updates it with the relationship to a piece of content(child and
+/// child_content_type).  This is saved and then the hashes are calculated, which are saved as the
+/// final fully associated node.
+pub fn _save_node_content(node: Node, content: Content) {
+    match content {
+        PostContent(_post) => {
+            if node.child >= 1 {
+                // Update the content
+                println!("Update not supported yet")
+                // Create revision
+                // Create content row with updated version
+                // Create node revision
+                // @FutureState Create new node hashes
+            } else {
+                // Create new node
+                // Create new content row with node.id as parent value
+                let _content = Post {
+                    parent: node.id,
+                    .._post
+                };
+                // println!("{:#?}", _content);
+                let _saved_content = create_node_article(&_content);
+                // Update node with child id as content.id
+                let _updated_node = _update_new_node_article(node, &_saved_content);
+                // @FutureState Create node hashes
+                // @FutureState Update node
+            }
+
+        }, //println!("Post content type passed"),
+        LinkContent(_link) => println!("Link content type passed"),
+    }
+}
+
 
 /// Enter a NewPost struct into the database (tracks closely to Post without the auto fields).
 ///
@@ -191,7 +198,7 @@ pub fn create_post(content: &NewPost) -> Post {
 ///     body: String::from("Something"),
 ///     summary: String::from("Something else"),
 ///     tags: String::from("This, That"),
-///     parent: String::from("{\"content_type\": \"None\", \"id\": 0}"),
+///     parent: 1,
 ///     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
 ///     version: 2,
 ///   };
@@ -457,7 +464,7 @@ pub fn create_link(content: &NewLink) -> Link {
 ///     title: String::from("Something"),
 ///     url: String::from("Something else"),
 ///     tags: String::from("This, That"),
-///     parent: String::from("{\"content_type\": \"None\", \"id\": 0}"),
+///     parent: 1,
 ///     updated: NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11),
 ///     version: 2,
 ///   };
